@@ -2,13 +2,17 @@ package main
 
 import (
 	"context"
-	"github.com/rusneustroevkz/courier/internal/backend/router"
-	"github.com/rusneustroevkz/courier/internal/config"
-	"github.com/rusneustroevkz/courier/pkg/server"
+	"errors"
 	"log/slog"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
+
+	"github.com/rusneustroevkz/courier/internal/backend/router"
+	"github.com/rusneustroevkz/courier/internal/config"
+	"github.com/rusneustroevkz/courier/pkg/server"
 )
 
 func main() {
@@ -33,7 +37,7 @@ func main() {
 
 	publicServer := server.New(cfg.PublicServer, publicRouter.Routes())
 	go func() {
-		if err := publicServer.Start(); err != nil {
+		if err := publicServer.Start(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			slog.ErrorContext(ctx, "failed to start public server", "error", err)
 			os.Exit(1)
 		}
@@ -42,22 +46,28 @@ func main() {
 
 	privateServer := server.New(cfg.PrivateServer, privateRouter.Routes())
 	go func() {
-		if err := privateServer.Start(); err != nil {
+		if err := privateServer.Start(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			slog.ErrorContext(ctx, "failed to start private server", "error", err)
 			os.Exit(1)
 		}
 	}()
 	slog.InfoContext(ctx, "starting private server", "port", cfg.PrivateServer.Port)
 
-	select {
-	case <-ctx.Done():
-		if err := ctx.Err(); err != nil {
-			slog.ErrorContext(ctx, "failed to shutdown gracefully", "error", err)
-		}
-		stop()
+	<-ctx.Done()
+	slog.Info("shutting down servers...")
+
+	shutdownCtx, timeout := context.WithTimeout(context.Background(), 15*time.Second)
+	defer timeout()
+
+	if err := publicServer.Stop(shutdownCtx); err != nil {
+		slog.ErrorContext(shutdownCtx, "failed to stop public server", "error", err)
+	}
+	if err := privateServer.Stop(shutdownCtx); err != nil {
+		slog.ErrorContext(shutdownCtx, "failed to stop private server", "error", err)
+	}
+	if err := shutdownCtx.Err(); err != nil && !errors.Is(err, context.Canceled) {
+		slog.ErrorContext(shutdownCtx, "failed to shutdown gracefully", "error", err)
 	}
 
-	if err := publicServer.Stop(ctx); err != nil {
-		slog.ErrorContext(ctx, "failed to stop public server", "error", err)
-	}
+	slog.Info("shutdown complete")
 }
