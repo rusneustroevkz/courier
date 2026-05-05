@@ -1,5 +1,5 @@
-#include .env
-#export
+include .env
+export
 
 .PHONY: sqlc-gen
 sqlc-gen:

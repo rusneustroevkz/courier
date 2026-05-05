@@ -2,10 +2,9 @@ package postgres
 
 import (
 	"fmt"
-	"log/slog"
-
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+	"github.com/rusneustroevkz/courier/pkg/logger"
 )
 
 type Config struct {
@@ -17,7 +16,7 @@ type Config struct {
 }
 
 type Postgres struct {
-	db *sqlx.DB
+	DB *sqlx.DB
 }
 
 func New(cfg Config) (*Postgres, error) {
@@ -33,13 +32,13 @@ func New(cfg Config) (*Postgres, error) {
 		return nil, err
 	}
 
-	slog.Info("postgres connected", "addr", cfg.Host+":"+cfg.Port, "database", cfg.Database)
+	logger.Info("postgres connected", "addr", cfg.Host+":"+cfg.Port, "database", cfg.Database)
 
 	return &Postgres{
-		db: db,
+		DB: db,
 	}, nil
 }
 
 func (p *Postgres) Close() error {
-	return p.db.Close()
+	return p.DB.Close()
 }

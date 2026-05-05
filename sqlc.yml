@@ -1,12 +1,12 @@
 version: "2"
 sql:
   - engine: "postgresql"
-    queries: "internal/users/query.sql"
+    queries: "internal/backend/users/query.sql"
     schema: "migrations"
     gen:
       go:
         package: "users"
-        out: "internal/users"
+        out: "internal/backend/users"
         sql_package: "database/sql"
         output_db_file_name: "repository.go"
         emit_interface: true
