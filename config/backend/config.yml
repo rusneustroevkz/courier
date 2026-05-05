@@ -1,0 +1,17 @@
+private_server:
+  port: ${PRIVATE_SERVER_PORT}
+public_server:
+  port: ${PUBLIC_SERVER_PORT}
+log_level: ${LOG_LEVEL}
+telegram_bot:
+  token: ${TELEGRAM_BOT_TOKEN}
+  timeout: ${TELEGRAM_BOT_TIMEOUT}
+redis:
+  password: ${REDIS_PASSWORD}
+  addr: ${REDIS_ADDR}
+postgres:
+  host: ${POSTGRES_HOST}
+  port: ${POSTGRES_PORT}
+  username: ${POSTGRES_USERNAME}
+  password: ${POSTGRES_PASSWORD}
+  database: ${POSTGRES_DATABASE}

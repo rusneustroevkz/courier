@@ -6,8 +6,11 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/rusneustroevkz/courier/internal/config"
 )
+
+type Config struct {
+	Port int `yaml:"port"`
+}
 
 type Server interface {
 	Start() error
@@ -18,7 +21,7 @@ type server struct {
 	srv *http.Server
 }
 
-func New(cfg config.Server, router chi.Router) Server {
+func New(cfg Config, router chi.Router) Server {
 	return &server{
 		srv: &http.Server{
 			Addr:    fmt.Sprintf(":%d", cfg.Port),

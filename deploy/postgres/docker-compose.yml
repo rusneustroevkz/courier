@@ -1,0 +1,25 @@
+services:
+  postgres:
+    container_name: postgres
+    image: postgres:18.3-alpine
+    restart: always
+    env_file:
+      - .env
+    expose:
+      - 5432
+    networks:
+      - courier-net
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  courier-net:
+    driver: bridge
+
+volumes:
+  pg_data:

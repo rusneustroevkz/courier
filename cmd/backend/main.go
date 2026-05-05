@@ -11,7 +11,10 @@ import (
 	"time"
 
 	"github.com/rusneustroevkz/courier/internal/backend/router"
+	"github.com/rusneustroevkz/courier/internal/backend/telegram"
 	"github.com/rusneustroevkz/courier/internal/config"
+	"github.com/rusneustroevkz/courier/pkg/postgres"
+	"github.com/rusneustroevkz/courier/pkg/redis"
 	"github.com/rusneustroevkz/courier/pkg/server"
 )
 
@@ -31,6 +34,27 @@ func main() {
 
 	slog.SetLogLoggerLevel(cfg.LogLevel)
 	slog.InfoContext(ctx, "initializing server", "log_level", cfg.LogLevel)
+
+	redisClient, err := redis.New(cfg.Redis)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to initialize redis", "error", err)
+		os.Exit(1)
+	}
+
+	db, err := postgres.New(cfg.Postgres)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to initialize postgres", "error", err)
+		os.Exit(1)
+	}
+
+	telegramBot, err := telegram.NewTelegram(cfg.TelegramBot)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to initialize telegram bot", "error", err)
+		os.Exit(1)
+	}
+	go func() {
+		telegramBot.Start()
+	}()
 
 	publicRouter := router.NewPublic()
 	privateRouter := router.NewPrivate()
@@ -68,6 +92,13 @@ func main() {
 	if err := shutdownCtx.Err(); err != nil && !errors.Is(err, context.Canceled) {
 		slog.ErrorContext(shutdownCtx, "failed to shutdown gracefully", "error", err)
 	}
+	if err := redisClient.Close(); err != nil {
+		slog.ErrorContext(shutdownCtx, "failed to close redis", "error", err)
+	}
+	if err := db.Close(); err != nil {
+		slog.ErrorContext(shutdownCtx, "failed to close postgres", "error", err)
+	}
+	telegramBot.Stop()
 
 	slog.Info("shutdown complete")
 }

@@ -1,0 +1,33 @@
+services:
+  nginx:
+    image: nginx:1.29-alpine3.23
+    container_name: nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - courier-net
+    volumes:
+      - ./deploy/nginx/config/conf.d:/etc/nginx/conf.d:ro
+      - ./deploy/nginx/certbot/conf:/etc/letsencrypt:ro
+      - ./deploy/nginx/certbot/www:/var/www/certbot:ro
+      - /var/logs/nginx:/var/log/nginx
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  certbot:
+    image: certbot/certbot:latest
+    container_name: certbot
+    volumes:
+      - ./deploy/nginx/certbot/conf:/etc/letsencrypt
+      - ./deploy/nginx/certbot/www:/var/www/certbot
+    # Команда для проверки и обновления сертификатов каждые 12 часов
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    networks:
+      - courier-net
+
+networks:
+  courier-net:
+    driver: bridge

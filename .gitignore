@@ -1,2 +1,4 @@
 .idea
 *.env
+deploy/redis/local.docker-compose.yml
+deploy/postgres/local.docker-compose.yml

@@ -1,12 +1,15 @@
 package router
 
-import "github.com/go-chi/chi/v5"
+import (
+	"github.com/go-chi/chi/v5"
+)
 
 type Public interface {
 	Routes() *chi.Mux
 }
 
-type public struct{}
+type public struct {
+}
 
 func NewPublic() Public {
 	return &public{}

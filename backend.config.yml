@@ -1,5 +1,0 @@
-private_server:
-  port: ${PRIVATE_SERVER_PORT}
-public_server:
-  port: ${PUBLIC_SERVER_PORT}
-log_level: ${LOG_LEVEL}
