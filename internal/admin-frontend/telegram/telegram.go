@@ -3,7 +3,6 @@ package telegram
 import (
 	"context"
 
-	"github.com/rusneustroevkz/courier/internal/admin-frontend/users"
 	"github.com/rusneustroevkz/courier/pkg/logger"
 	"gopkg.in/telebot.v4"
 )
@@ -14,11 +13,10 @@ type Config struct {
 }
 
 type Telegram struct {
-	bot          *telebot.Bot
-	usersService users.Service
+	bot *telebot.Bot
 }
 
-func NewTelegram(cfg Config, usersService users.Service) (*Telegram, error) {
+func NewTelegram(cfg Config) (*Telegram, error) {
 	pref := telebot.Settings{
 		Token: cfg.Token,
 	}
@@ -29,8 +27,7 @@ func NewTelegram(cfg Config, usersService users.Service) (*Telegram, error) {
 	}
 
 	t := &Telegram{
-		bot:          bot,
-		usersService: usersService,
+		bot: bot,
 	}
 
 	logger.Info("telegram bot started", "name", bot.Me.Username)

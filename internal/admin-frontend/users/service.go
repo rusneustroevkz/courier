@@ -2,21 +2,24 @@ package users
 
 import (
 	"context"
+
+	"github.com/rusneustroevkz/courier/internal/admin-frontend/telegram"
 )
 
 type Service interface {
-	RegisterByTgID(ctx context.Context, params RegisterByTgID) error
-	GetByTgID(ctx context.Context, userID int64) (User, error)
-	UpdatePhone(ctx context.Context, params UpdatePhone) error
+	List(ctx context.Context) ([]User, error)
+	GetByID(ctx context.Context, userID int64) (*User, error)
 }
 
 type service struct {
 	usersRepository Querier
+	telegramBot     *telegram.Telegram
 }
 
-func NewService(usersRepository Querier) Service {
+func NewService(usersRepository Querier, telegramBot *telegram.Telegram) Service {
 	return &service{
 		usersRepository: usersRepository,
+		telegramBot:     telegramBot,
 	}
 }
 
@@ -26,5 +29,18 @@ type RegisterByTgID struct {
 }
 
 func (s *service) List(ctx context.Context) ([]User, error) {
+	params := ListParams{
+		Limit:  1000,
+		Offset: 0,
+	}
+	return s.usersRepository.List(ctx, params)
+}
 
+func (s *service) GetByID(ctx context.Context, userID int64) (*User, error) {
+	user, err := s.usersRepository.GetByID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
 }

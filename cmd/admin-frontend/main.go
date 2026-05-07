@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/rusneustroevkz/courier/internal/admin-frontend/middlewares"
 	"net/http"
 	"os"
 	"os/signal"
@@ -39,11 +40,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	usersRepository := users.New(db.DB)
-
-	usersService := users.NewService(usersRepository)
-
-	telegramBot, err := telegram.NewTelegram(cfg.TelegramBot, usersService)
+	telegramBot, err := telegram.NewTelegram(cfg.TelegramBot)
 	if err != nil {
 		logger.Error("failed to initialize telegram bot", "error", err)
 		os.Exit(1)
@@ -52,7 +49,14 @@ func main() {
 		telegramBot.Start()
 	}()
 
-	publicRouter := router.NewPublic()
+	mw := middlewares.NewMiddleware(cfg)
+
+	usersRepository := users.New(db.DB)
+
+	usersService := users.NewService(usersRepository, telegramBot)
+	uesrsController := users.NewController(usersService)
+
+	publicRouter := router.NewPublic(mw, uesrsController)
 
 	publicServer := server.New(cfg.PublicServer, publicRouter.Routes())
 	go func() {
