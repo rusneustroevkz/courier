@@ -8,6 +8,7 @@ import (
 	"github.com/rusneustroevkz/courier/pkg/logger"
 	"gopkg.in/telebot.v4"
 	"strconv"
+	"strings"
 )
 
 const (
@@ -46,5 +47,27 @@ func (t *Telegram) CommandStart(ct telebot.Context) error {
 
 	id := strconv.FormatInt(user.ID, 10)
 
-	return ct.Send("Профиль: "+id, t.Menu(ct))
+	what := strings.Builder{}
+	what.WriteString("<b>Профиль</b>")
+	what.WriteString("<blockquote>")
+	what.WriteString("ID: " + id)
+
+	if user.FullName.Valid {
+		what.WriteString("\nИмя: " + user.FullName.String)
+	}
+	if user.Phone.Valid {
+		what.WriteString("\nНомер телефона: " + user.Phone.String)
+	}
+	what.WriteString("\nВерифицирован: ")
+	if user.Verified {
+		what.WriteString("да")
+	} else {
+		what.WriteString("нет")
+	}
+	if user.Rating.Valid {
+		what.WriteString("\nРейтинг: " + user.Rating.String)
+	}
+	what.WriteString("</blockquote>")
+
+	return ct.Send(what.String(), t.Menu(ct))
 }
