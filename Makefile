@@ -1,4 +1,4 @@
-include .env
+include cmd/backend/.env
 export
 
 .PHONY: sqlc-gen

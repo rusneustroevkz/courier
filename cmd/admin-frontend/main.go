@@ -2,20 +2,19 @@ package main
 
 import (
 	"context"
-	"errors"
-	"github.com/rusneustroevkz/courier/internal/backend/config"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
-	"github.com/rusneustroevkz/courier/internal/backend/router"
-	"github.com/rusneustroevkz/courier/internal/backend/telegram"
-	"github.com/rusneustroevkz/courier/internal/backend/users"
+	"github.com/pkg/errors"
+	"github.com/rusneustroevkz/courier/internal/admin-frontend/config"
+	"github.com/rusneustroevkz/courier/internal/admin-frontend/router"
+	"github.com/rusneustroevkz/courier/internal/admin-frontend/telegram"
+	"github.com/rusneustroevkz/courier/internal/admin-frontend/users"
 	"github.com/rusneustroevkz/courier/pkg/logger"
 	"github.com/rusneustroevkz/courier/pkg/postgres"
-	"github.com/rusneustroevkz/courier/pkg/redis"
 	"github.com/rusneustroevkz/courier/pkg/server"
 )
 
@@ -33,12 +32,6 @@ func main() {
 
 	logger.SetLogLoggerLevel(cfg.LogLevel)
 	logger.Info("initializing server", "log_level", cfg.LogLevel)
-
-	redisClient, err := redis.New(cfg.Redis)
-	if err != nil {
-		logger.Error("failed to initialize redis", "error", err)
-		os.Exit(1)
-	}
 
 	db, err := postgres.New(cfg.Postgres)
 	if err != nil {
@@ -60,7 +53,6 @@ func main() {
 	}()
 
 	publicRouter := router.NewPublic()
-	privateRouter := router.NewPrivate()
 
 	publicServer := server.New(cfg.PublicServer, publicRouter.Routes())
 	go func() {
@@ -70,15 +62,6 @@ func main() {
 		}
 	}()
 	logger.Info("starting public server", "port", cfg.PublicServer.Port)
-
-	privateServer := server.New(cfg.PrivateServer, privateRouter.Routes())
-	go func() {
-		if err := privateServer.Start(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			logger.Error("failed to start private server", "error", err)
-			os.Exit(1)
-		}
-	}()
-	logger.Info("starting private server", "port", cfg.PrivateServer.Port)
 
 	<-ctx.Done()
 
@@ -90,14 +73,8 @@ func main() {
 	if err := publicServer.Stop(shutdownCtx); err != nil {
 		logger.Error("failed to stop public server", "error", err)
 	}
-	if err := privateServer.Stop(shutdownCtx); err != nil {
-		logger.Error("failed to stop private server", "error", err)
-	}
 	if err := shutdownCtx.Err(); err != nil && !errors.Is(err, context.Canceled) {
 		logger.Error("failed to shutdown gracefully", "error", err)
-	}
-	if err := redisClient.Close(); err != nil {
-		logger.Error("failed to close redis", "error", err)
 	}
 	if err := db.Close(); err != nil {
 		logger.Error("failed to close postgres", "error", err)

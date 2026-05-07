@@ -1,12 +1,11 @@
 package config
 
 import (
-	"github.com/rusneustroevkz/courier/internal/backend/telegram"
-	"github.com/rusneustroevkz/courier/pkg/postgres"
-	"github.com/rusneustroevkz/courier/pkg/redis"
 	"log/slog"
 	"os"
 
+	"github.com/rusneustroevkz/courier/internal/admin-frontend/telegram"
+	"github.com/rusneustroevkz/courier/pkg/postgres"
 	"github.com/rusneustroevkz/courier/pkg/server"
 	"gopkg.in/yaml.v3"
 )
@@ -19,7 +18,6 @@ type Config struct {
 	PrivateServer server.Config   `yaml:"private_server"`
 	PublicServer  server.Config   `yaml:"public_server"`
 	TelegramBot   telegram.Config `yaml:"telegram_bot"`
-	Redis         redis.Config    `yaml:"redis"`
 	Postgres      postgres.Config `yaml:"postgres"`
 }
 
