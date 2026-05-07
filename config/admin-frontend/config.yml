@@ -2,6 +2,8 @@ private_server:
   port: ${PRIVATE_SERVER_PORT}
 public_server:
   port: ${PUBLIC_SERVER_PORT}
+render_server:
+  port: ${RENDER_SERVER_PORT}
 log_level: ${LOG_LEVEL}
 telegram_bot:
   token: ${TELEGRAM_BOT_TOKEN}

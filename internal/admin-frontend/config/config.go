@@ -17,6 +17,7 @@ type Config struct {
 	ENV           string          `yaml:"env"`
 	PrivateServer server.Config   `yaml:"private_server"`
 	PublicServer  server.Config   `yaml:"public_server"`
+	RenderServer  server.Config   `yaml:"render_server"`
 	TelegramBot   telegram.Config `yaml:"telegram_bot"`
 	Postgres      postgres.Config `yaml:"postgres"`
 }

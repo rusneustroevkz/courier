@@ -76,6 +76,16 @@ func main() {
 	}()
 	logger.Info("starting public server", "port", cfg.PublicServer.Port)
 
+	renderRouter := router.NewRender()
+	renderServer := server.New(cfg.RenderServer, renderRouter.Routes())
+	go func() {
+		if err := renderServer.Start(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			logger.Error("failed to start render server", "error", err)
+			os.Exit(1)
+		}
+	}()
+	logger.Info("starting render server", "port", cfg.RenderServer.Port)
+
 	<-ctx.Done()
 
 	shutdownCtx, timeout := context.WithTimeout(context.Background(), 15*time.Second)
