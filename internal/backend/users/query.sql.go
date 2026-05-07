@@ -10,29 +10,68 @@ import (
 	"database/sql"
 )
 
-const create = `-- name: Create :one
+const create = `-- name: Create :exec
 insert into users(tg_id, full_name, email, phone, role)
 values($1, $2, $3, $4, $5)
-returning id
 `
 
 type CreateParams struct {
 	TgID     sql.NullInt64  `db:"tg_id"`
 	FullName sql.NullString `db:"full_name"`
 	Email    sql.NullString `db:"email"`
-	Phone    string         `db:"phone"`
+	Phone    sql.NullString `db:"phone"`
 	Role     RoleType       `db:"role"`
 }
 
-func (q *Queries) Create(ctx context.Context, arg CreateParams) (int64, error) {
-	row := q.db.QueryRowContext(ctx, create,
+func (q *Queries) Create(ctx context.Context, arg CreateParams) error {
+	_, err := q.db.ExecContext(ctx, create,
 		arg.TgID,
 		arg.FullName,
 		arg.Email,
 		arg.Phone,
 		arg.Role,
 	)
-	var id int64
-	err := row.Scan(&id)
-	return id, err
+	return err
+}
+
+const getByTgID = `-- name: GetByTgID :one
+select id, tg_id, full_name, email, phone, role, on_work, verified, rating, balance, created_at, updated_at
+from users
+where tg_id = $1
+`
+
+func (q *Queries) GetByTgID(ctx context.Context, tgID sql.NullInt64) (User, error) {
+	row := q.db.QueryRowContext(ctx, getByTgID, tgID)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.TgID,
+		&i.FullName,
+		&i.Email,
+		&i.Phone,
+		&i.Role,
+		&i.OnWork,
+		&i.Verified,
+		&i.Rating,
+		&i.Balance,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const updatePhoneByTgID = `-- name: UpdatePhoneByTgID :exec
+update users
+set phone = $1
+where tg_id = $2
+`
+
+type UpdatePhoneByTgIDParams struct {
+	Phone sql.NullString `db:"phone"`
+	TgID  sql.NullInt64  `db:"tg_id"`
+}
+
+func (q *Queries) UpdatePhoneByTgID(ctx context.Context, arg UpdatePhoneByTgIDParams) error {
+	_, err := q.db.ExecContext(ctx, updatePhoneByTgID, arg.Phone, arg.TgID)
+	return err
 }

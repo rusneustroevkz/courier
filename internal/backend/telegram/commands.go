@@ -4,8 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"strconv"
-	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/rusneustroevkz/courier/internal/backend/users"
 	"github.com/rusneustroevkz/courier/pkg/logger"
 	"gopkg.in/telebot.v4"
@@ -21,33 +21,37 @@ func (t *Telegram) CommandStart(ct telebot.Context) error {
 
 	_ = t.bot.Notify(ct.Recipient(), telebot.Typing)
 
-	if ct.Sender() == nil {
+	sender := ct.Sender()
+
+	if sender == nil {
 		log.ErrorContext(ctx, "sender is nil")
 		return ct.Send("Ошибка создания пользователя")
 	}
 
-	username := ct.Sender().FirstName + " " + ct.Sender().LastName
-
-	createParams := users.CreateParams{
-		TgID: sql.NullInt64{
-			Int64: ct.Sender().ID,
-			Valid: ct.Sender().ID > 0,
-		},
-		FullName: sql.NullString{
-			String: username,
-			Valid:  strings.Trim(username, " ") != "",
-		},
-		Role: users.RoleTypeCourier,
-	}
-	id, err := t.usersRepository.Create(ctx, createParams)
+	user, err := t.usersService.GetByTgID(ctx, sender.ID)
 	if err != nil {
-		log.ErrorContext(ctx, "failed create user", "error", err)
-		return ct.Send("Ошибка создания пользователя")
+		if errors.Is(err, sql.ErrNoRows) {
+			params := users.RegisterByTgID{
+				UserID:   sender.ID,
+				Username: sender.FirstName + " " + sender.LastName,
+			}
+			if err := t.usersService.RegisterByTgID(ctx, params); err != nil {
+				log.ErrorContext(ctx, "failed to register user", "error", err)
+				return ct.Send("Ошибка при создании пользователя")
+			}
+		} else {
+			log.ErrorContext(ctx, "failed to get user", "error", err)
+			return ct.Send("Ошибка при выборке пользователя")
+		}
+	}
+
+	if !user.Phone.Valid {
+		return t.registerPhone(ct)
 	}
 
 	if err := ct.Send("Добро пожаловать в В2В Курьеры"); err != nil {
 		return err
 	}
 
-	return ct.Send("Пользователь успешно создан, идентификатор: " + strconv.FormatInt(id, 10))
+	return ct.Send("Пользователь успешно создан, идентификатор: " + strconv.FormatInt(user.ID, 10))
 }

@@ -8,7 +8,7 @@ create table users(
     tg_id bigint unique,
     full_name text,
     email text unique,
-    phone text not null unique,
+    phone text unique,
     role role_type not null,
     on_work boolean not null default false,
     verified boolean not null default false,

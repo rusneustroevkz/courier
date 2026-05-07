@@ -48,7 +48,9 @@ func main() {
 
 	usersRepository := users.New(db.DB)
 
-	telegramBot, err := telegram.NewTelegram(cfg.TelegramBot, usersRepository)
+	usersService := users.NewService(usersRepository)
+
+	telegramBot, err := telegram.NewTelegram(cfg.TelegramBot, usersService)
 	if err != nil {
 		logger.Error("failed to initialize telegram bot", "error", err)
 		os.Exit(1)

@@ -1,10 +1,10 @@
 package telegram
 
 import (
-	"github.com/rusneustroevkz/courier/internal/backend/users"
-	"github.com/rusneustroevkz/courier/pkg/logger"
 	"time"
 
+	"github.com/rusneustroevkz/courier/internal/backend/users"
+	"github.com/rusneustroevkz/courier/pkg/logger"
 	"gopkg.in/telebot.v4"
 )
 
@@ -14,11 +14,11 @@ type Config struct {
 }
 
 type Telegram struct {
-	bot             *telebot.Bot
-	usersRepository users.Querier
+	bot          *telebot.Bot
+	usersService users.Service
 }
 
-func NewTelegram(cfg Config, usersRepository users.Querier) (*Telegram, error) {
+func NewTelegram(cfg Config, usersService users.Service) (*Telegram, error) {
 	pref := telebot.Settings{
 		Token:  cfg.Token,
 		Poller: &telebot.LongPoller{Timeout: time.Duration(cfg.Timeout) * time.Second},
@@ -38,11 +38,12 @@ func NewTelegram(cfg Config, usersRepository users.Querier) (*Telegram, error) {
 	}
 
 	t := &Telegram{
-		bot:             bot,
-		usersRepository: usersRepository,
+		bot:          bot,
+		usersService: usersService,
 	}
 
 	bot.Handle(CommandStart, t.CommandStart)
+	bot.Handle(telebot.OnContact, t.OnContact)
 
 	logger.Info("telegram bot started", "name", bot.Me.Username)
 

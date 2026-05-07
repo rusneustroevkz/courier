@@ -106,7 +106,7 @@ type User struct {
 	TgID      sql.NullInt64  `db:"tg_id"`
 	FullName  sql.NullString `db:"full_name"`
 	Email     sql.NullString `db:"email"`
-	Phone     string         `db:"phone"`
+	Phone     sql.NullString `db:"phone"`
 	Role      RoleType       `db:"role"`
 	OnWork    bool           `db:"on_work"`
 	Verified  bool           `db:"verified"`
