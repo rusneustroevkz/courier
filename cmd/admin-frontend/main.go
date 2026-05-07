@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"github.com/rusneustroevkz/courier/internal/admin-frontend/middlewares"
 	"net/http"
 	"os"
 	"os/signal"
@@ -11,6 +10,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/rusneustroevkz/courier/internal/admin-frontend/config"
+	"github.com/rusneustroevkz/courier/internal/admin-frontend/middlewares"
 	"github.com/rusneustroevkz/courier/internal/admin-frontend/router"
 	"github.com/rusneustroevkz/courier/internal/admin-frontend/telegram"
 	"github.com/rusneustroevkz/courier/internal/admin-frontend/users"
@@ -54,10 +54,19 @@ func main() {
 	usersRepository := users.New(db.DB)
 
 	usersService := users.NewService(usersRepository, telegramBot)
-	uesrsController := users.NewController(usersService)
+	usersController := users.NewController(usersService)
 
-	publicRouter := router.NewPublic(mw, uesrsController)
+	privateRouter := router.NewPrivate()
+	privateServer := server.New(cfg.PrivateServer, privateRouter.Routes())
+	go func() {
+		if err := privateServer.Start(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			logger.Error("failed to start private server", "error", err)
+			os.Exit(1)
+		}
+	}()
+	logger.Info("starting private server", "port", cfg.PrivateServer.Port)
 
+	publicRouter := router.NewPublic(mw, usersController)
 	publicServer := server.New(cfg.PublicServer, publicRouter.Routes())
 	go func() {
 		if err := publicServer.Start(); err != nil && !errors.Is(err, http.ErrServerClosed) {
@@ -74,6 +83,9 @@ func main() {
 
 	logger.Info("shutting down servers...")
 
+	if err := privateServer.Stop(shutdownCtx); err != nil {
+		logger.Error("failed to stop private server", "error", err)
+	}
 	if err := publicServer.Stop(shutdownCtx); err != nil {
 		logger.Error("failed to stop public server", "error", err)
 	}

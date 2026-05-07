@@ -1,10 +1,13 @@
 package users
 
-import "net/http"
+import (
+	"net/http"
+)
 
 type Controller interface {
 	List(w http.ResponseWriter, r *http.Request)
-	Get(w http.ResponseWriter, r *http.Request)
+	GetByID(w http.ResponseWriter, r *http.Request)
+	Verify(w http.ResponseWriter, r *http.Request)
 }
 
 type controller struct {
@@ -12,11 +15,13 @@ type controller struct {
 }
 
 func NewController(usersService Service) Controller {
-	return &controller{}
+	return &controller{
+		usersService: usersService,
+	}
 }
 
-func (c *controller) List(w http.ResponseWriter, r *http.Request) {
+func (c *controller) List(w http.ResponseWriter, r *http.Request) {}
 
-}
+func (c *controller) GetByID(w http.ResponseWriter, r *http.Request) {}
 
-func (c *controller) Get(w http.ResponseWriter, r *http.Request) {}
+func (c *controller) Verify(w http.ResponseWriter, r *http.Request) {}

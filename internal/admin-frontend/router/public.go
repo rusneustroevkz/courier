@@ -31,7 +31,8 @@ func (rr *public) Routes() *chi.Mux {
 	mux.Route("/api/v1", func(r chi.Router) {
 		r.With(rr.mw.Auth).Route("/users", func(r chi.Router) {
 			r.Get("/", rr.usersController.List)
-			r.Get("/{id}", rr.usersController.Get)
+			r.Get("/{id}", rr.usersController.GetByID)
+			r.Put("/verify/{id}", rr.usersController.Verify)
 		})
 	})
 
