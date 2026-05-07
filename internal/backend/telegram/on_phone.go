@@ -16,10 +16,10 @@ func (t *Telegram) OnContact(ct telebot.Context) error {
 	sender := ct.Sender()
 
 	if contact == nil {
-		return ct.Send("Передан невалидный контакт", contactMenu)
+		return ct.Send("Передан невалидный контакт", t.Menu(ct))
 	}
 	if contact.UserID != sender.ID {
-		return ct.Send("Номер телефона не совпадает с вашим.", contactMenu)
+		return ct.Send("Номер телефона не совпадает с вашим.", t.Menu(ct))
 	}
 
 	args := users.UpdatePhone{
@@ -28,17 +28,8 @@ func (t *Telegram) OnContact(ct telebot.Context) error {
 	}
 	if err := t.usersService.UpdatePhone(ctx, args); err != nil {
 		log.ErrorContext(ctx, "failed update phone number", err)
-		return ct.Send("Ошибка при сохранении номера телефона", contactMenu)
+		return ct.Send("Ошибка при сохранении номера телефона", t.Menu(ct))
 	}
 
-	if err := ct.Send(ct.Recipient(), "Номер телефона успешно сохранен"); err != nil {
-		log.ErrorContext(ctx, "failed send to recipient", err)
-	}
-
-	text := ct.Message().ReplyTo.Text
-	if text == "Поделитесь с номером телефона" {
-		return t.CommandStart(ct)
-	}
-
-	return nil
+	return ct.Send("Номер телефона успешно сохранен", t.Menu(ct))
 }

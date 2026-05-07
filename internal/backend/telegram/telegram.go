@@ -1,6 +1,8 @@
 package telegram
 
 import (
+	"context"
+	"strings"
 	"time"
 
 	"github.com/rusneustroevkz/courier/internal/backend/users"
@@ -20,8 +22,9 @@ type Telegram struct {
 
 func NewTelegram(cfg Config, usersService users.Service) (*Telegram, error) {
 	pref := telebot.Settings{
-		Token:  cfg.Token,
-		Poller: &telebot.LongPoller{Timeout: time.Duration(cfg.Timeout) * time.Second},
+		Token:     cfg.Token,
+		Poller:    &telebot.LongPoller{Timeout: time.Duration(cfg.Timeout) * time.Second},
+		ParseMode: telebot.ModeHTML,
 	}
 
 	bot, err := telebot.NewBot(pref)
@@ -44,10 +47,24 @@ func NewTelegram(cfg Config, usersService users.Service) (*Telegram, error) {
 
 	bot.Handle(CommandStart, t.CommandStart)
 	bot.Handle(telebot.OnContact, t.OnContact)
+	bot.Handle(telebot.OnCallback, t.OnCallback)
 
 	logger.Info("telegram bot started", "name", bot.Me.Username)
 
 	return t, nil
+}
+
+func (t *Telegram) OnCallback(ct telebot.Context) error {
+	_ = ct.Notify(telebot.Typing)
+	ctx := context.Background()
+
+	parts := strings.Split(ct.Callback().Data, "\f")
+
+	if len(parts) > 1 && strings.HasPrefix(parts[1], CallbackTypeShareContact) {
+		return t.CallbackShareContact(parts, ctx, ct)
+	}
+
+	return nil
 }
 
 func (t *Telegram) Start() {

@@ -3,12 +3,11 @@ package telegram
 import (
 	"context"
 	"database/sql"
-	"strconv"
-
 	"github.com/pkg/errors"
 	"github.com/rusneustroevkz/courier/internal/backend/users"
 	"github.com/rusneustroevkz/courier/pkg/logger"
 	"gopkg.in/telebot.v4"
+	"strconv"
 )
 
 const (
@@ -45,13 +44,7 @@ func (t *Telegram) CommandStart(ct telebot.Context) error {
 		}
 	}
 
-	if !user.Phone.Valid {
-		return t.registerPhone(ct)
-	}
+	id := strconv.FormatInt(user.ID, 10)
 
-	if err := ct.Send("Добро пожаловать в В2В Курьеры"); err != nil {
-		return err
-	}
-
-	return ct.Send("Пользователь успешно создан, идентификатор: " + strconv.FormatInt(user.ID, 10))
+	return ct.Send("Профиль: "+id, t.Menu(ct))
 }
