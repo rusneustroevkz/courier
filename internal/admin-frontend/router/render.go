@@ -3,7 +3,8 @@ package router
 import (
 	"github.com/a-h/templ"
 	"github.com/go-chi/chi/v5"
-	web "github.com/rusneustroevkz/courier/public"
+	"github.com/rusneustroevkz/courier/static"
+	"net/http"
 )
 
 type Render interface {
@@ -20,11 +21,8 @@ func NewRender() Render {
 func (rr *render) Routes() *chi.Mux {
 	mux := chi.NewRouter()
 
-	component := web.Hello("John")
-
-	mux.Route("/", func(r chi.Router) {
-		r.Handle("/", templ.Handler(component))
-	})
+	mux.Handle("/", templ.Handler(static.Index()))
+	mux.Handle("/static/*", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 
 	return mux
 }

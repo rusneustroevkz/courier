@@ -19,4 +19,8 @@ goose-create:
 
 .PHONY: run-templ
 run-templ:
-	docker stop templ && docker rm templ && docker run --name templ -v `pwd`/public:/app -w=/app ghcr.io/a-h/templ:latest generate
+	docker stop templ && docker rm templ && docker run --name templ -v `pwd`:/app -w=/app ghcr.io/a-h/templ:latest generate
+
+.PHONY: run-esbuild
+run-esbuild:
+	./node_modules/.bin/esbuild --bundle static/app/index.js --outdir=static --minify --jsx=automatic
