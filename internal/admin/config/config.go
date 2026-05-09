@@ -4,7 +4,7 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/rusneustroevkz/courier/internal/admin-frontend/telegram"
+	"github.com/rusneustroevkz/courier/internal/admin/telegram"
 	"github.com/rusneustroevkz/courier/pkg/postgres"
 	"github.com/rusneustroevkz/courier/pkg/server"
 	"gopkg.in/yaml.v3"

@@ -3,7 +3,7 @@ package users
 import (
 	"context"
 
-	"github.com/rusneustroevkz/courier/internal/admin-frontend/telegram"
+	"github.com/rusneustroevkz/courier/internal/admin/telegram"
 )
 
 type Service interface {

@@ -17,10 +17,11 @@ goose-down:
 goose-create:
 	goose -dir migrations create $(name) sql
 
-.PHONY: run-templ
+.PHONY: run-dev
+run-dev: run-templ run-esbuild
+
 run-templ:
 	docker stop templ && docker rm templ && docker run --name templ -v `pwd`:/app -w=/app ghcr.io/a-h/templ:latest generate
 
-.PHONY: run-esbuild
 run-esbuild:
-	./node_modules/.bin/esbuild --bundle static/app/index.js --outdir=static --minify --jsx=automatic
+	./node_modules/.bin/esbuild --bundle ./static/admin/index.tsx --outdir=static/admin --minify --jsx=automatic --allow-overwrite

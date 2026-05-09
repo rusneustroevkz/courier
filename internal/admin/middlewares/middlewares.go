@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-	"github.com/rusneustroevkz/courier/internal/admin-frontend/config"
+	"github.com/rusneustroevkz/courier/internal/admin/config"
 	"github.com/rusneustroevkz/courier/pkg/logger"
 	"github.com/rusneustroevkz/courier/pkg/responder"
 )

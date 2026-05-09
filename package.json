@@ -1,27 +1,13 @@
 {
-  "name": "courier",
-  "version": "1.0.0",
-  "description": "",
-  "homepage": "https://github.com/rusneustroevkz/courier#readme",
-  "bugs": {
-    "url": "https://github.com/rusneustroevkz/courier/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/rusneustroevkz/courier.git"
-  },
-  "license": "ISC",
-  "author": "",
-  "type": "commonjs",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
+  "type": "module",
   "devDependencies": {
-    "esbuild": "0.28.0"
+    "@tailwindcss/cli": "^4.3.0",
+    "esbuild": "0.28.0",
+    "tailwindcss": "^4.3.0"
   },
   "dependencies": {
     "react": "^19.2.6",
-    "react-dom": "^19.2.6"
+    "react-dom": "^19.2.6",
+    "react-router": "^7.15.0"
   }
 }

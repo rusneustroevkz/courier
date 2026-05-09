@@ -2,8 +2,8 @@ package router
 
 import (
 	"github.com/go-chi/chi/v5"
-	"github.com/rusneustroevkz/courier/internal/admin-frontend/middlewares"
-	"github.com/rusneustroevkz/courier/internal/admin-frontend/users"
+	"github.com/rusneustroevkz/courier/internal/admin/middlewares"
+	"github.com/rusneustroevkz/courier/internal/admin/users"
 )
 
 type Public interface {
