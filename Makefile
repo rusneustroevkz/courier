@@ -18,13 +18,16 @@ goose-create:
 	goose -dir migrations create $(name) sql
 
 .PHONY: run-dev
-run-dev: run-templ run-esbuild-admin run-esbuild-client
+run-dev: run-templ run-tailwind run-esbuild-client
 
 run-templ:
 	docker stop templ && docker rm templ && docker run --name templ -v `pwd`:/app -w=/app ghcr.io/a-h/templ:latest generate
+
+run-tailwind:
+	npx @tailwindcss/cli -i ./static/styles/input.css -o ./static/styles/output.css -m
 
 run-esbuild-admin:
 	./node_modules/.bin/esbuild --bundle ./static/admin/index.tsx --outdir=static/admin --minify --jsx=automatic --allow-overwrite
 
 run-esbuild-client:
-	./node_modules/.bin/esbuild --bundle ./static/admin/index.tsx --outdir=static/admin --minify --jsx=automatic --allow-overwrite
+	./node_modules/.bin/esbuild --bundle ./static/client/index.tsx --outdir=static/client --minify --jsx=automatic --allow-overwrite --conditions=style

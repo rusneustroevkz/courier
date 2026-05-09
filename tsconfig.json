@@ -7,8 +7,11 @@
         "esModuleInterop": true,
         "skipLibCheck": true,
         "forceConsistentCasingInFileNames": true,
-        "baseUrl": "./",
-        "ignoreDeprecations": "6.0"
+        "ignoreDeprecations": "6.0",
+        "baseUrl": ".",
+        "paths": {
+            "@/*": ["./static/*"]
+        }
     },
     "include": [
         "static/**/*.ts"
