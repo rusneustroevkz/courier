@@ -2,7 +2,6 @@
 *.env
 deploy/redis/local.docker-compose.yml
 deploy/postgres/local.docker-compose.yml
-public/*
 node_modules
 static/admin/index.js
-static/admin/index.css
+static/client/index.js
