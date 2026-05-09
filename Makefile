@@ -24,10 +24,7 @@ run-templ:
 	docker stop templ && docker rm templ && docker run --name templ -v `pwd`:/app -w=/app ghcr.io/a-h/templ:latest generate
 
 run-tailwind:
-	npx @tailwindcss/cli -i ./static/styles/input.css -o ./static/styles/output.css -m
-
-run-esbuild-admin:
-	./node_modules/.bin/esbuild --bundle ./static/admin/index.tsx --outdir=static/admin --minify --jsx=automatic --allow-overwrite
+	npx @tailwindcss/cli -i ./frontend/styles/input.css -o ./frontend/styles/output.css -m
 
 run-esbuild-client:
-	./node_modules/.bin/esbuild --bundle ./static/client/index.tsx --outdir=static/client --minify --jsx=automatic --allow-overwrite --conditions=style
+	./node_modules/.bin/esbuild --bundle ./frontend/client/index.tsx --outdir=public/client --minify --jsx=automatic --allow-overwrite --conditions=style

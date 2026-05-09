@@ -3,8 +3,5 @@
 deploy/redis/local.docker-compose.yml
 deploy/postgres/local.docker-compose.yml
 node_modules
-static/admin/index.js
-static/admin/index.css
-static/client/index.js
-static/client/index.css
 static/styles/output.css
+public/*

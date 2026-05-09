@@ -5,7 +5,7 @@ import (
 
 	"github.com/a-h/templ"
 	"github.com/go-chi/chi/v5"
-	client "github.com/rusneustroevkz/courier/static/client"
+	client "github.com/rusneustroevkz/courier/frontend/client"
 )
 
 type Render interface {
@@ -23,7 +23,7 @@ func (rr *render) Routes() *chi.Mux {
 	mux := chi.NewRouter()
 
 	mux.Handle("/", templ.Handler(client.Index()))
-	mux.Handle("/static/*", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
+	mux.Handle("/public/*", http.StripPrefix("/public/", http.FileServer(http.Dir("public"))))
 
 	return mux
 }
