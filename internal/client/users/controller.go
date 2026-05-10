@@ -5,7 +5,7 @@ import (
 )
 
 type Controller interface {
-	GetByID(w http.ResponseWriter, r *http.Request)
+	GetMe(w http.ResponseWriter, r *http.Request)
 }
 
 type controller struct {
@@ -18,4 +18,6 @@ func NewController(usersService Service) Controller {
 	}
 }
 
-func (c *controller) GetByID(w http.ResponseWriter, r *http.Request) {}
+func (c *controller) GetMe(w http.ResponseWriter, r *http.Request) {
+
+}

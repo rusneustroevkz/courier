@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/rusneustroevkz/courier/internal/client/auth"
 	"net/http"
 	"os"
 	"os/signal"
@@ -19,13 +20,33 @@ import (
 	"github.com/rusneustroevkz/courier/pkg/server"
 )
 
+// @title           Client panel API
+// @version         1.0
+// @description     This is a sample server celler server.
+// @termsOfService  http://swagger.io/terms/
+
+// @contact.name   Test
+// @contact.url    https://example.com
+// @contact.email  example@gmail.com
+
+// @license.name  Apache 2.0
+// @license.url   http://www.apache.org/licenses/LICENSE-2.0.html
+
+// @schemes http
+// @host localhost:8080
+// @BasePath  /api/v1
+
+// @securityDefinitions.basic  BasicAuth
+
+// @externalDocs.description  OpenAPI
+// @externalDocs.url          https://swagger.io/resources/open-api/
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
 	logger.New()
 
-	cfg, err := config.New(os.Getenv("CONFIG_NAME"))
+	cfg, err := config.New()
 	if err != nil {
 		logger.Error("failed to initialize config", "error", err)
 		os.Exit(1)
@@ -49,12 +70,15 @@ func main() {
 		telegramBot.Start()
 	}()
 
-	mw := middlewares.NewMiddleware(cfg)
-
 	usersRepository := users.New(db.DB)
-
 	usersService := users.NewService(usersRepository, telegramBot)
 	usersController := users.NewController(usersService)
+
+	authRepository := auth.New(db.DB)
+	authService := auth.NewService(cfg, usersRepository, authRepository)
+	authController := auth.NewController(authService)
+
+	mw := middlewares.NewMiddleware(cfg, authService)
 
 	privateRouter := router.NewPrivate()
 	privateServer := server.New(cfg.PrivateServer, privateRouter.Routes())
@@ -66,7 +90,7 @@ func main() {
 	}()
 	logger.Info("starting private server", "port", cfg.PrivateServer.Port)
 
-	publicRouter := router.NewPublic(mw, usersController)
+	publicRouter := router.NewPublic(mw, usersController, authController)
 	publicServer := server.New(cfg.PublicServer, publicRouter.Routes())
 	go func() {
 		if err := publicServer.Start(); err != nil && !errors.Is(err, http.ErrServerClosed) {
@@ -75,16 +99,6 @@ func main() {
 		}
 	}()
 	logger.Info("starting public server", "port", cfg.PublicServer.Port)
-
-	renderRouter := router.NewRender()
-	renderServer := server.New(cfg.RenderServer, renderRouter.Routes())
-	go func() {
-		if err := renderServer.Start(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			logger.Error("failed to start render server", "error", err)
-			os.Exit(1)
-		}
-	}()
-	logger.Info("starting render server", "port", cfg.RenderServer.Port)
 
 	<-ctx.Done()
 

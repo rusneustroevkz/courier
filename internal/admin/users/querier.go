@@ -9,8 +9,8 @@ import (
 )
 
 type Querier interface {
-	GetByID(ctx context.Context, id int64) (User, error)
-	List(ctx context.Context, arg ListParams) ([]User, error)
+	GetByID(ctx context.Context, id int64) (*User, error)
+	List(ctx context.Context, arg ListParams) ([]*User, error)
 }
 
 var _ Querier = (*Queries)(nil)

@@ -6,11 +6,13 @@ package users
 
 import (
 	"context"
+	"database/sql"
 )
 
 type Querier interface {
-	GetByID(ctx context.Context, id int64) (User, error)
-	List(ctx context.Context, arg ListParams) ([]User, error)
+	CreateByEmail(ctx context.Context, arg CreateByEmailParams) error
+	GetByEmail(ctx context.Context, email sql.NullString) (*User, error)
+	GetByID(ctx context.Context, id int64) (*User, error)
 }
 
 var _ Querier = (*Queries)(nil)

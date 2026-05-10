@@ -3,8 +3,11 @@ select *
 from users
 where id = $1;
 
--- name: List :many
+-- name: GetByEmail :one
 select *
 from users
-limit $1
-offset $2;
+where email = $1;
+
+-- name: CreateByEmail :exec
+insert into users(email, role, password_hash)
+values($1, $2, $3);

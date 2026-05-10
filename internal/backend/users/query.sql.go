@@ -35,12 +35,12 @@ func (q *Queries) Create(ctx context.Context, arg CreateParams) error {
 }
 
 const getByTgID = `-- name: GetByTgID :one
-select id, tg_id, full_name, email, phone, role, on_work, verified, rating, balance, created_at, updated_at
+select id, tg_id, full_name, email, phone, role, on_work, verified, rating, balance, created_at, updated_at, password_hash
 from users
 where tg_id = $1
 `
 
-func (q *Queries) GetByTgID(ctx context.Context, tgID sql.NullInt64) (User, error) {
+func (q *Queries) GetByTgID(ctx context.Context, tgID sql.NullInt64) (*User, error) {
 	row := q.db.QueryRowContext(ctx, getByTgID, tgID)
 	var i User
 	err := row.Scan(
@@ -56,8 +56,9 @@ func (q *Queries) GetByTgID(ctx context.Context, tgID sql.NullInt64) (User, erro
 		&i.Balance,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.PasswordHash,
 	)
-	return i, err
+	return &i, err
 }
 
 const updatePhoneByTgID = `-- name: UpdatePhoneByTgID :exec

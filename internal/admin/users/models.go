@@ -54,64 +54,18 @@ func (ns NullRoleType) Value() (driver.Value, error) {
 	return string(ns.RoleType), nil
 }
 
-type TransportType string
-
-const (
-	TransportTypeWalk       TransportType = "walk"
-	TransportTypeBicycle    TransportType = "bicycle"
-	TransportTypeScooter    TransportType = "scooter"
-	TransportTypeMotorcycle TransportType = "motorcycle"
-	TransportTypeCar        TransportType = "car"
-	TransportTypeVan        TransportType = "van"
-	TransportTypeTruck      TransportType = "truck"
-)
-
-func (e *TransportType) Scan(src interface{}) error {
-	switch s := src.(type) {
-	case []byte:
-		*e = TransportType(s)
-	case string:
-		*e = TransportType(s)
-	default:
-		return fmt.Errorf("unsupported scan type for TransportType: %T", src)
-	}
-	return nil
-}
-
-type NullTransportType struct {
-	TransportType TransportType
-	Valid         bool // Valid is true if TransportType is not NULL
-}
-
-// Scan implements the Scanner interface.
-func (ns *NullTransportType) Scan(value interface{}) error {
-	if value == nil {
-		ns.TransportType, ns.Valid = "", false
-		return nil
-	}
-	ns.Valid = true
-	return ns.TransportType.Scan(value)
-}
-
-// Value implements the driver Valuer interface.
-func (ns NullTransportType) Value() (driver.Value, error) {
-	if !ns.Valid {
-		return nil, nil
-	}
-	return string(ns.TransportType), nil
-}
-
 type User struct {
-	ID        int64          `db:"id"`
-	TgID      sql.NullInt64  `db:"tg_id"`
-	FullName  sql.NullString `db:"full_name"`
-	Email     sql.NullString `db:"email"`
-	Phone     sql.NullString `db:"phone"`
-	Role      RoleType       `db:"role"`
-	OnWork    bool           `db:"on_work"`
-	Verified  bool           `db:"verified"`
-	Rating    sql.NullString `db:"rating"`
-	Balance   sql.NullString `db:"balance"`
-	CreatedAt time.Time      `db:"created_at"`
-	UpdatedAt time.Time      `db:"updated_at"`
+	ID           int64          `db:"id"`
+	TgID         sql.NullInt64  `db:"tg_id"`
+	FullName     sql.NullString `db:"full_name"`
+	Email        sql.NullString `db:"email"`
+	Phone        sql.NullString `db:"phone"`
+	Role         RoleType       `db:"role"`
+	OnWork       bool           `db:"on_work"`
+	Verified     bool           `db:"verified"`
+	Rating       sql.NullString `db:"rating"`
+	Balance      sql.NullString `db:"balance"`
+	CreatedAt    time.Time      `db:"created_at"`
+	UpdatedAt    time.Time      `db:"updated_at"`
+	PasswordHash sql.NullString `db:"password_hash"`
 }

@@ -10,12 +10,12 @@ import (
 )
 
 const getByID = `-- name: GetByID :one
-select id, tg_id, full_name, email, phone, role, on_work, verified, rating, balance, created_at, updated_at
+select id, tg_id, full_name, email, phone, role, on_work, verified, rating, balance, created_at, updated_at, password_hash
 from users
 where id = $1
 `
 
-func (q *Queries) GetByID(ctx context.Context, id int64) (User, error) {
+func (q *Queries) GetByID(ctx context.Context, id int64) (*User, error) {
 	row := q.db.QueryRowContext(ctx, getByID, id)
 	var i User
 	err := row.Scan(
@@ -31,12 +31,13 @@ func (q *Queries) GetByID(ctx context.Context, id int64) (User, error) {
 		&i.Balance,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.PasswordHash,
 	)
-	return i, err
+	return &i, err
 }
 
 const list = `-- name: List :many
-select id, tg_id, full_name, email, phone, role, on_work, verified, rating, balance, created_at, updated_at
+select id, tg_id, full_name, email, phone, role, on_work, verified, rating, balance, created_at, updated_at, password_hash
 from users
 limit $1
 offset $2
@@ -47,13 +48,13 @@ type ListParams struct {
 	Offset int32 `db:"offset"`
 }
 
-func (q *Queries) List(ctx context.Context, arg ListParams) ([]User, error) {
+func (q *Queries) List(ctx context.Context, arg ListParams) ([]*User, error) {
 	rows, err := q.db.QueryContext(ctx, list, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []User
+	var items []*User
 	for rows.Next() {
 		var i User
 		if err := rows.Scan(
@@ -69,10 +70,11 @@ func (q *Queries) List(ctx context.Context, arg ListParams) ([]User, error) {
 			&i.Balance,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.PasswordHash,
 		); err != nil {
 			return nil, err
 		}
-		items = append(items, i)
+		items = append(items, &i)
 	}
 	if err := rows.Close(); err != nil {
 		return nil, err

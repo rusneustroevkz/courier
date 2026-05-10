@@ -7,15 +7,59 @@ package users
 
 import (
 	"context"
+	"database/sql"
 )
 
+const createByEmail = `-- name: CreateByEmail :exec
+insert into users(email, role, password_hash)
+values($1, $2, $3)
+`
+
+type CreateByEmailParams struct {
+	Email        sql.NullString `db:"email"`
+	Role         RoleType       `db:"role"`
+	PasswordHash sql.NullString `db:"password_hash"`
+}
+
+func (q *Queries) CreateByEmail(ctx context.Context, arg CreateByEmailParams) error {
+	_, err := q.db.ExecContext(ctx, createByEmail, arg.Email, arg.Role, arg.PasswordHash)
+	return err
+}
+
+const getByEmail = `-- name: GetByEmail :one
+select id, tg_id, full_name, email, phone, role, on_work, verified, rating, balance, created_at, updated_at, password_hash
+from users
+where email = $1
+`
+
+func (q *Queries) GetByEmail(ctx context.Context, email sql.NullString) (*User, error) {
+	row := q.db.QueryRowContext(ctx, getByEmail, email)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.TgID,
+		&i.FullName,
+		&i.Email,
+		&i.Phone,
+		&i.Role,
+		&i.OnWork,
+		&i.Verified,
+		&i.Rating,
+		&i.Balance,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.PasswordHash,
+	)
+	return &i, err
+}
+
 const getByID = `-- name: GetByID :one
-select id, tg_id, full_name, email, phone, role, on_work, verified, rating, balance, created_at, updated_at
+select id, tg_id, full_name, email, phone, role, on_work, verified, rating, balance, created_at, updated_at, password_hash
 from users
 where id = $1
 `
 
-func (q *Queries) GetByID(ctx context.Context, id int64) (User, error) {
+func (q *Queries) GetByID(ctx context.Context, id int64) (*User, error) {
 	row := q.db.QueryRowContext(ctx, getByID, id)
 	var i User
 	err := row.Scan(
@@ -31,54 +75,7 @@ func (q *Queries) GetByID(ctx context.Context, id int64) (User, error) {
 		&i.Balance,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.PasswordHash,
 	)
-	return i, err
-}
-
-const list = `-- name: List :many
-select id, tg_id, full_name, email, phone, role, on_work, verified, rating, balance, created_at, updated_at
-from users
-limit $1
-offset $2
-`
-
-type ListParams struct {
-	Limit  int32 `db:"limit"`
-	Offset int32 `db:"offset"`
-}
-
-func (q *Queries) List(ctx context.Context, arg ListParams) ([]User, error) {
-	rows, err := q.db.QueryContext(ctx, list, arg.Limit, arg.Offset)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []User
-	for rows.Next() {
-		var i User
-		if err := rows.Scan(
-			&i.ID,
-			&i.TgID,
-			&i.FullName,
-			&i.Email,
-			&i.Phone,
-			&i.Role,
-			&i.OnWork,
-			&i.Verified,
-			&i.Rating,
-			&i.Balance,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
+	return &i, err
 }
