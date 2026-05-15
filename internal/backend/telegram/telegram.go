@@ -2,11 +2,11 @@ package telegram
 
 import (
 	"context"
+	"log/slog"
 	"strings"
 	"time"
 
 	"github.com/rusneustroevkz/courier/internal/backend/users"
-	"github.com/rusneustroevkz/courier/pkg/logger"
 	"gopkg.in/telebot.v4"
 )
 
@@ -49,7 +49,7 @@ func NewTelegram(cfg Config, usersService users.Service) (*Telegram, error) {
 	bot.Handle(telebot.OnContact, t.OnContact)
 	bot.Handle(telebot.OnCallback, t.OnCallback)
 
-	logger.Info("telegram bot started", "name", bot.Me.Username)
+	slog.Info("telegram bot started", "name", bot.Me.Username)
 
 	return t, nil
 }

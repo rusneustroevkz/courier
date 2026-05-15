@@ -2,11 +2,11 @@ package auth
 
 import (
 	"encoding/json"
+	"log/slog"
 	"net/http"
 	"time"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/rusneustroevkz/courier/pkg/logger"
 	"github.com/rusneustroevkz/courier/pkg/responder"
 )
 
@@ -63,7 +63,7 @@ type RegisterResponse struct {
 //	@Router       /auth/register [post]
 func (c *controller) Register(w http.ResponseWriter, r *http.Request) {
 	var req RegisterRequest
-	log := logger.With("method", "Register")
+	log := slog.With("method", "Register")
 	res := &RegisterResponse{
 		Errors: make(map[string]string),
 	}
@@ -121,7 +121,7 @@ type RefreshResponseData struct {
 //	@Failure      500  {object} RefreshResponse
 //	@Router       /auth/refresh [post]
 func (c *controller) Refresh(w http.ResponseWriter, r *http.Request) {
-	log := logger.With("method", "Refresh")
+	log := slog.With("method", "Refresh")
 	res := &RefreshResponse{
 		Errors: make(map[string]string),
 	}
@@ -186,7 +186,7 @@ type LoginResponseData struct {
 //	@Failure      500  {object} LoginResponse
 //	@Router       /auth/login [post]
 func (c *controller) Login(w http.ResponseWriter, r *http.Request) {
-	log := logger.With("method", "Login")
+	log := slog.With("method", "Login")
 
 	var req LoginRequest
 	res := &LoginResponse{
@@ -255,7 +255,7 @@ type LogoutResponse struct {
 //	@Failure      500  {object} LogoutResponse
 //	@Router       /auth/logout [post]
 func (c *controller) Logout(w http.ResponseWriter, r *http.Request) {
-	log := logger.With("method", "Logout")
+	log := slog.With("method", "Logout")
 
 	res := &LogoutResponse{
 		Errors: make(map[string]string),

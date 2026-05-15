@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
-	"github.com/rusneustroevkz/courier/pkg/logger"
+	"log/slog"
 )
 
 type Config struct {
@@ -32,7 +32,7 @@ func New(cfg Config) (*Postgres, error) {
 		return nil, err
 	}
 
-	logger.Info("postgres connected", "addr", cfg.Host+":"+cfg.Port, "database", cfg.Database)
+	slog.Info("postgres connected", "addr", cfg.Host+":"+cfg.Port, "database", cfg.Database)
 
 	return &Postgres{
 		DB: db,

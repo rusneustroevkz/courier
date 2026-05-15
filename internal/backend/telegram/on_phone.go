@@ -2,15 +2,15 @@ package telegram
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/rusneustroevkz/courier/internal/backend/users"
-	"github.com/rusneustroevkz/courier/pkg/logger"
 	"gopkg.in/telebot.v4"
 )
 
 func (t *Telegram) OnContact(ct telebot.Context) error {
 	ctx := context.Background()
-	log := logger.With("method", "OnContact")
+	log := slog.With("method", "OnContact")
 
 	contact := ct.Message().Contact
 	sender := ct.Sender()

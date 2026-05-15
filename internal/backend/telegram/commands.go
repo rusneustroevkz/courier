@@ -5,8 +5,8 @@ import (
 	"database/sql"
 	"github.com/pkg/errors"
 	"github.com/rusneustroevkz/courier/internal/backend/users"
-	"github.com/rusneustroevkz/courier/pkg/logger"
 	"gopkg.in/telebot.v4"
+	"log/slog"
 	"strconv"
 	"strings"
 )
@@ -17,7 +17,7 @@ const (
 
 func (t *Telegram) CommandStart(ct telebot.Context) error {
 	ctx := context.Background()
-	log := logger.With("method", "CommandStart")
+	log := slog.With("method", "CommandStart")
 
 	_ = t.bot.Notify(ct.Recipient(), telebot.Typing)
 

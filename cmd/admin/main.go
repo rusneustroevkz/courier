@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -14,7 +15,6 @@ import (
 	"github.com/rusneustroevkz/courier/internal/admin/router"
 	"github.com/rusneustroevkz/courier/internal/admin/telegram"
 	"github.com/rusneustroevkz/courier/internal/admin/users"
-	"github.com/rusneustroevkz/courier/pkg/logger"
 	"github.com/rusneustroevkz/courier/pkg/postgres"
 	"github.com/rusneustroevkz/courier/pkg/server"
 )
@@ -23,26 +23,31 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	logger.New()
+	handlerOpts := &slog.HandlerOptions{
+		Level: slog.LevelInfo,
+	}
+	loggerHandler := slog.NewJSONHandler(os.Stdout, handlerOpts)
+	logger := slog.New(loggerHandler)
+	slog.SetDefault(logger)
 
 	cfg, err := config.New(os.Getenv("CONFIG_NAME"))
 	if err != nil {
-		logger.Error("failed to initialize config", "error", err)
+		slog.Error("failed to initialize config", "error", err)
 		os.Exit(1)
 	}
 
-	logger.SetLogLoggerLevel(cfg.LogLevel)
-	logger.Info("initializing server", "log_level", cfg.LogLevel)
+	slog.SetLogLoggerLevel(cfg.LogLevel)
+	slog.Info("initializing server", "log_level", cfg.LogLevel)
 
 	db, err := postgres.New(cfg.Postgres)
 	if err != nil {
-		logger.Error("failed to initialize postgres", "error", err)
+		slog.Error("failed to initialize postgres", "error", err)
 		os.Exit(1)
 	}
 
 	telegramBot, err := telegram.NewTelegram(cfg.TelegramBot)
 	if err != nil {
-		logger.Error("failed to initialize telegram bot", "error", err)
+		slog.Error("failed to initialize telegram bot", "error", err)
 		os.Exit(1)
 	}
 	go func() {
@@ -60,52 +65,52 @@ func main() {
 	privateServer := server.New(cfg.PrivateServer, privateRouter.Routes())
 	go func() {
 		if err := privateServer.Start(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			logger.Error("failed to start private server", "error", err)
+			slog.Error("failed to start private server", "error", err)
 			os.Exit(1)
 		}
 	}()
-	logger.Info("starting private server", "port", cfg.PrivateServer.Port)
+	slog.Info("starting private server", "port", cfg.PrivateServer.Port)
 
 	publicRouter := router.NewPublic(mw, usersController)
 	publicServer := server.New(cfg.PublicServer, publicRouter.Routes())
 	go func() {
 		if err := publicServer.Start(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			logger.Error("failed to start public server", "error", err)
+			slog.Error("failed to start public server", "error", err)
 			os.Exit(1)
 		}
 	}()
-	logger.Info("starting public server", "port", cfg.PublicServer.Port)
+	slog.Info("starting public server", "port", cfg.PublicServer.Port)
 
 	renderRouter := router.NewRender()
 	renderServer := server.New(cfg.RenderServer, renderRouter.Routes())
 	go func() {
 		if err := renderServer.Start(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			logger.Error("failed to start render server", "error", err)
+			slog.Error("failed to start render server", "error", err)
 			os.Exit(1)
 		}
 	}()
-	logger.Info("starting render server", "port", cfg.RenderServer.Port)
+	slog.Info("starting render server", "port", cfg.RenderServer.Port)
 
 	<-ctx.Done()
 
 	shutdownCtx, timeout := context.WithTimeout(context.Background(), 15*time.Second)
 	defer timeout()
 
-	logger.Info("shutting down servers...")
+	slog.Info("shutting down servers...")
 
 	if err := privateServer.Stop(shutdownCtx); err != nil {
-		logger.Error("failed to stop private server", "error", err)
+		slog.Error("failed to stop private server", "error", err)
 	}
 	if err := publicServer.Stop(shutdownCtx); err != nil {
-		logger.Error("failed to stop public server", "error", err)
+		slog.Error("failed to stop public server", "error", err)
 	}
 	if err := shutdownCtx.Err(); err != nil && !errors.Is(err, context.Canceled) {
-		logger.Error("failed to shutdown gracefully", "error", err)
+		slog.Error("failed to shutdown gracefully", "error", err)
 	}
 	if err := db.Close(); err != nil {
-		logger.Error("failed to close postgres", "error", err)
+		slog.Error("failed to close postgres", "error", err)
 	}
 	telegramBot.Stop()
 
-	logger.Info("shutdown complete")
+	slog.Info("shutdown complete")
 }

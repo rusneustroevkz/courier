@@ -3,7 +3,7 @@ package redis
 import (
 	"context"
 	"github.com/redis/go-redis/v9"
-	"github.com/rusneustroevkz/courier/pkg/logger"
+	"log/slog"
 )
 
 type Config struct {
@@ -28,7 +28,7 @@ func New(cfg Config) (*Redis, error) {
 		return nil, err
 	}
 
-	logger.Info("redis client started", "addr", cfg.Addr)
+	slog.Info("redis client started", "addr", cfg.Addr)
 
 	return &Redis{
 		client: rdb,

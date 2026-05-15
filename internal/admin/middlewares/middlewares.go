@@ -3,12 +3,12 @@ package middlewares
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strings"
 
 	"github.com/google/uuid"
 	"github.com/rusneustroevkz/courier/internal/admin/config"
-	"github.com/rusneustroevkz/courier/pkg/logger"
 	"github.com/rusneustroevkz/courier/pkg/responder"
 )
 
@@ -37,7 +37,7 @@ func (m *middleware) RequestID(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		requestID, err := uuid.NewV7()
 		if err != nil {
-			logger.ErrorContext(r.Context(), "failed to generate request ID", "err", err)
+			slog.ErrorContext(r.Context(), "failed to generate request ID", "err", err)
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -91,7 +91,7 @@ func (m *middleware) RestorePanics(next http.Handler) http.Handler {
 			if err := recover(); err != nil {
 				responder.Responder(w, nil, http.StatusInternalServerError)
 				res.Errors["error"] = fmt.Sprintf("Паника: %v", err)
-				logger.Error("received panic", "err", err)
+				slog.Error("received panic", "err", err)
 			}
 		}()
 

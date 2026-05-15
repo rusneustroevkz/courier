@@ -2,8 +2,8 @@ package telegram
 
 import (
 	"context"
+	"log/slog"
 
-	"github.com/rusneustroevkz/courier/pkg/logger"
 	"gopkg.in/telebot.v4"
 )
 
@@ -30,7 +30,7 @@ func NewTelegram(cfg Config) (*Telegram, error) {
 		bot: bot,
 	}
 
-	logger.Info("telegram bot started", "name", bot.Me.Username)
+	slog.Info("telegram bot started", "name", bot.Me.Username)
 
 	return t, nil
 }
@@ -39,7 +39,7 @@ func (t *Telegram) Send(ctx context.Context, userID int64, msg string) error {
 	chat := &telebot.Chat{ID: userID}
 	_, err := t.bot.Send(chat, msg)
 	if err != nil {
-		logger.ErrorContext(ctx, "failed to send message", "error", err)
+		slog.ErrorContext(ctx, "failed to send message", "error", err)
 		return err
 	}
 	return nil

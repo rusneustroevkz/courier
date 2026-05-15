@@ -2,15 +2,15 @@ package telegram
 
 import (
 	"context"
-	"github.com/rusneustroevkz/courier/pkg/logger"
 	"gopkg.in/telebot.v4"
+	"log/slog"
 )
 
 func (t *Telegram) Menu(ct telebot.Context) *telebot.ReplyMarkup {
 	ctx := context.Background()
 	sender := ct.Sender()
 
-	log := logger.With("method", "Menu")
+	log := slog.With("method", "Menu")
 
 	user, err := t.usersService.GetByTgID(ctx, sender.ID)
 	if err != nil {

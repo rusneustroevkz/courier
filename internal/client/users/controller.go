@@ -1,10 +1,10 @@
 package users
 
 import (
+	"log/slog"
 	"net/http"
 	"strconv"
 
-	"github.com/rusneustroevkz/courier/pkg/logger"
 	"github.com/rusneustroevkz/courier/pkg/responder"
 	"github.com/rusneustroevkz/courier/pkg/utils"
 )
@@ -54,7 +54,7 @@ type GetMeResponseData struct {
 //	@Failure      500  {object} GetMeResponse
 //	@Router       /users/me [get]
 func (c *controller) GetMe(w http.ResponseWriter, r *http.Request) {
-	log := logger.With("method", "Login")
+	log := slog.With("method", "Login")
 
 	res := &GetMeResponse{
 		Errors: make(map[string]string),

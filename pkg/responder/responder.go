@@ -2,9 +2,8 @@ package responder
 
 import (
 	"encoding/json"
+	"log/slog"
 	"net/http"
-
-	"github.com/rusneustroevkz/courier/pkg/logger"
 )
 
 func Responder(w http.ResponseWriter, data any, code int) {
@@ -12,7 +11,7 @@ func Responder(w http.ResponseWriter, data any, code int) {
 	w.Header().Set("Content-Type", "application/json")
 
 	if err := json.NewEncoder(w).Encode(data); err != nil {
-		logger.Error("failed to marshal response", "err", err)
+		slog.Error("failed to marshal response", "err", err)
 	}
 }
 
