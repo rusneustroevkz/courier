@@ -3,7 +3,6 @@ package middlewares
 import (
 	"context"
 	"fmt"
-	"github.com/pkg/errors"
 	"github.com/rusneustroevkz/courier/internal/client/auth"
 	"net/http"
 	"strings"
@@ -58,15 +57,24 @@ func (m *middleware) RequestID(next http.Handler) http.Handler {
 
 func (m *middleware) Auth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log := logger.With("method", "Auth", "path", r.URL.Path)
+		res := &Response{
+			Errors: make(map[string]string),
+		}
+
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" {
-			http.Error(w, "Missing authorization header", http.StatusUnauthorized)
+			log.ErrorContext(r.Context(), "no have auth header")
+			res.Errors["error"] = "Нет авторизационного заголовка"
+			responder.Responder(w, res, http.StatusUnauthorized)
 			return
 		}
 
 		parts := strings.Split(authHeader, " ")
 		if len(parts) != 2 || parts[0] != "Bearer" {
-			http.Error(w, "Invalid token format", http.StatusUnauthorized)
+			log.ErrorContext(r.Context(), "invalid token format")
+			res.Errors["error"] = "Невалидный формат токена"
+			responder.Responder(w, res, http.StatusUnauthorized)
 			return
 		}
 
@@ -74,7 +82,9 @@ func (m *middleware) Auth(next http.Handler) http.Handler {
 
 		userID, err := m.authService.VerifyToken(tokenString)
 		if err != nil {
-			http.Error(w, "Invalid or expired token", http.StatusUnauthorized)
+			log.ErrorContext(r.Context(), "invalid or expired token")
+			res.Errors["error"] = "Невалидный или истекший токен"
+			responder.Responder(w, res, http.StatusUnauthorized)
 			return
 		}
 
@@ -82,14 +92,6 @@ func (m *middleware) Auth(next http.Handler) http.Handler {
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
-}
-
-func GetUserID(ctx context.Context) (int64, error) {
-	uid, ok := ctx.Value(userIDKey).(int64)
-	if !ok {
-		return 0, errors.New("user_id not found in context")
-	}
-	return uid, nil
 }
 
 func (m *middleware) CORS(next http.Handler) http.Handler {

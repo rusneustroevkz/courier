@@ -56,7 +56,7 @@ type RegisterResponse struct {
 //	@Accept       application/json
 //	@Produce      application/json
 //	@Param        request body RegisterRequest true "тело запроса"
-//	@Success      201  {object} RegisterResponse
+//	@Success      200  {object} RegisterResponse
 //	@Failure      400  {object} RegisterResponse
 //	@Failure      404  {object} RegisterResponse
 //	@Failure      500  {object} RegisterResponse
@@ -114,8 +114,9 @@ type RefreshResponseData struct {
 //	@Tags         auth
 //	@Accept       application/json
 //	@Produce      application/json
-//	@Success      201  {object} RefreshResponse
+//	@Success      200  {object} RefreshResponse
 //	@Failure      400  {object} RefreshResponse
+//	@Failure      401  {object} RefreshResponse
 //	@Failure      404  {object} RefreshResponse
 //	@Failure      500  {object} RefreshResponse
 //	@Router       /auth/refresh [post]
@@ -179,7 +180,7 @@ type LoginResponseData struct {
 //	@Accept       application/json
 //	@Produce      application/json
 //	@Param        request body LoginRequest true "тело запроса"
-//	@Success      201  {object} LoginResponse
+//	@Success      200  {object} LoginResponse
 //	@Failure      400  {object} LoginResponse
 //	@Failure      404  {object} LoginResponse
 //	@Failure      500  {object} LoginResponse
@@ -247,8 +248,9 @@ type LogoutResponse struct {
 //	@Tags         auth
 //	@Accept       application/json
 //	@Produce      application/json
-//	@Success      201  {object} LogoutResponse
+//	@Success      200  {object} LogoutResponse
 //	@Failure      400  {object} LogoutResponse
+//	@Failure      401  {object} LogoutResponse
 //	@Failure      404  {object} LogoutResponse
 //	@Failure      500  {object} LogoutResponse
 //	@Router       /auth/logout [post]

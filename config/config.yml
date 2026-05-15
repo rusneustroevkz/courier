@@ -15,5 +15,6 @@ postgres:
   username: ${POSTGRES_USERNAME}
   password: ${POSTGRES_PASSWORD}
   database: ${POSTGRES_DATABASE}
+env: ${ENV}
 jwt_access_token_secret: ${JWT_ACCESS_TOKEN_SECRET}
 jwt_refresh_token_secret: ${JWT_REFRESH_TOKEN_SECRET}
