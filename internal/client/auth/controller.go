@@ -2,6 +2,7 @@ package auth
 
 import (
 	"encoding/json"
+	"github.com/rusneustroevkz/courier/internal/client/config"
 	"log/slog"
 	"net/http"
 	"time"
@@ -24,14 +25,16 @@ type Controller interface {
 type controller struct {
 	authService Service
 	validate    *validator.Validate
+	cfg         *config.Config
 }
 
-func NewController(authService Service) Controller {
+func NewController(authService Service, cfg *config.Config) Controller {
 	validate := validator.New()
 
 	c := &controller{
 		authService: authService,
 		validate:    validate,
+		cfg:         cfg,
 	}
 
 	c.registerTagNameFunc(validate)
@@ -228,14 +231,21 @@ func (c *controller) Login(w http.ResponseWriter, r *http.Request) {
 		res.Data.UserEmail = user.Email.String
 	}
 
-	http.SetCookie(w, &http.Cookie{
+	cookie := &http.Cookie{
 		Name:     refreshTokenName,
 		Value:    refreshToken,
 		Expires:  time.Now().Add(refreshTokenTTL),
 		HttpOnly: true,
-		Secure:   true,
-		Path:     "/api/v1/auth/refresh",
-	})
+		Secure:   false,
+		Path:     "",
+		SameSite: http.SameSiteLaxMode,
+	}
+
+	if c.cfg.ENV == "prd" {
+		cookie.Secure = true
+	}
+
+	http.SetCookie(w, cookie)
 
 	responder.Responder(w, res, http.StatusOK)
 }
@@ -282,11 +292,12 @@ func (c *controller) Logout(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     refreshTokenName,
 		Value:    "",
-		Path:     "/auth/refresh",
+		Path:     "",
 		Expires:  time.Unix(0, 0),
 		HttpOnly: true,
 		MaxAge:   -1,
+		SameSite: http.SameSiteLaxMode,
 	})
 
-	w.WriteHeader(http.StatusNoContent)
+	w.WriteHeader(http.StatusOK)
 }

@@ -89,7 +89,7 @@ func main() {
 
 	authRepository := auth.New(db.DB)
 	authService := auth.NewService(cfg, usersRepository, authRepository)
-	authController := auth.NewController(authService)
+	authController := auth.NewController(authService, cfg)
 
 	mw := middlewares.NewMiddleware(cfg.Middleware, authService)
 

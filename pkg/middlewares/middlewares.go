@@ -102,7 +102,7 @@ func (m *middleware) CORS(next http.Handler) http.Handler {
 			w.Header().Set("Access-Control-Allow-Origin", "https://b2b-courier-14.ru")
 		}
 		if strings.Contains(m.cfg.Env, "local") {
-			w.Header().Set("Access-Control-Allow-Origin", "*")
+			w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
 		}
 
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
