@@ -17,7 +17,7 @@ type Config struct {
 
 type contextKey string
 
-const userIDKey contextKey = "user_id"
+const UserIDKey contextKey = "user_id"
 
 type Middleware interface {
 	Auth(next http.Handler) http.Handler
@@ -90,7 +90,7 @@ func (m *middleware) Auth(next http.Handler) http.Handler {
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), userIDKey, userID)
+		ctx := context.WithValue(r.Context(), UserIDKey, userID)
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})

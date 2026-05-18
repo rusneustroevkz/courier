@@ -3,11 +3,10 @@ package utils
 import (
 	"context"
 	"database/sql"
-	"github.com/pkg/errors"
+	"fmt"
+	"github.com/rusneustroevkz/courier/pkg/middlewares"
 	"strconv"
 )
-
-const userIDKey = "user_id"
 
 func NullStringToFloat(s sql.NullString) float64 {
 	if !s.Valid || s.String == "" {
@@ -22,9 +21,9 @@ func NullStringToFloat(s sql.NullString) float64 {
 }
 
 func GetFromCtx(ctx context.Context) (int64, error) {
-	uid, ok := ctx.Value(userIDKey).(int64)
+	uid, ok := ctx.Value(middlewares.UserIDKey).(int64)
 	if !ok {
-		return 0, errors.New("user_id not found in context")
+		return 0, fmt.Errorf("could not get user id")
 	}
 	return uid, nil
 }

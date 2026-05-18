@@ -82,6 +82,7 @@ func (s *service) Refresh(ctx context.Context, oldRefreshToken string) (string, 
 type Register struct {
 	Email    string
 	Password string
+	Fullname string
 }
 
 func (s *service) Register(ctx context.Context, args Register) error {
@@ -102,6 +103,7 @@ func (s *service) Register(ctx context.Context, args Register) error {
 		Email:        sql.NullString{String: args.Email, Valid: args.Email != ""},
 		Role:         users.RoleTypeClient,
 		PasswordHash: sql.NullString{String: hash, Valid: hash != ""},
+		FullName:     sql.NullString{String: args.Fullname, Valid: args.Fullname != ""},
 	}
 
 	if !createByEmailParams.PasswordHash.Valid {

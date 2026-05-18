@@ -353,6 +353,7 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "email",
+                "fullname",
                 "password"
             ],
             "properties": {
@@ -360,6 +361,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "email": {
+                    "type": "string"
+                },
+                "fullname": {
                     "type": "string"
                 },
                 "password": {

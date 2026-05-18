@@ -40,6 +40,7 @@ func NewController(authService Service) Controller {
 }
 
 type RegisterRequest struct {
+	Fullname        string `json:"fullname" validate:"required"`
 	Email           string `json:"email" validate:"required,email"`
 	Password        string `json:"password" validate:"required,gte=8,lte=30"`
 	ConfirmPassword string `json:"confirm_password" validate:"eqfield=Password"`
@@ -88,6 +89,7 @@ func (c *controller) Register(w http.ResponseWriter, r *http.Request) {
 	params := Register{
 		Email:    req.Email,
 		Password: req.Password,
+		Fullname: req.Fullname,
 	}
 	if err := c.authService.Register(r.Context(), params); err != nil {
 		log.ErrorContext(r.Context(), "failed register", "error", err)

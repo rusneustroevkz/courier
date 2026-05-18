@@ -11,18 +11,24 @@ import (
 )
 
 const createByEmail = `-- name: CreateByEmail :exec
-insert into users(email, role, password_hash)
-values($1, $2, $3)
+insert into users(email, role, password_hash, full_name)
+values($1, $2, $3, $4)
 `
 
 type CreateByEmailParams struct {
 	Email        sql.NullString `db:"email"`
 	Role         RoleType       `db:"role"`
 	PasswordHash sql.NullString `db:"password_hash"`
+	FullName     sql.NullString `db:"full_name"`
 }
 
 func (q *Queries) CreateByEmail(ctx context.Context, arg CreateByEmailParams) error {
-	_, err := q.db.ExecContext(ctx, createByEmail, arg.Email, arg.Role, arg.PasswordHash)
+	_, err := q.db.ExecContext(ctx, createByEmail,
+		arg.Email,
+		arg.Role,
+		arg.PasswordHash,
+		arg.FullName,
+	)
 	return err
 }
 

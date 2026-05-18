@@ -350,6 +350,7 @@
             "type": "object",
             "required": [
                 "email",
+                "fullname",
                 "password"
             ],
             "properties": {
@@ -357,6 +358,9 @@
                     "type": "string"
                 },
                 "email": {
+                    "type": "string"
+                },
+                "fullname": {
                     "type": "string"
                 },
                 "password": {

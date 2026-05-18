@@ -22,11 +22,6 @@ func NewService(usersRepository Querier, telegramBot *telegram.Telegram) Service
 	}
 }
 
-type RegisterByTgID struct {
-	UserID   int64
-	Username string
-}
-
 func (s *service) GetByID(ctx context.Context, userID int64) (*User, error) {
 	user, err := s.usersRepository.GetByID(ctx, userID)
 	if err != nil {
