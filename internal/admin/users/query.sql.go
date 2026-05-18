@@ -10,7 +10,7 @@ import (
 )
 
 const getByID = `-- name: GetByID :one
-select id, tg_id, full_name, email, phone, role, on_work, verified, rating, balance, created_at, updated_at, password_hash
+select id, tg_id, full_name, email, phone, role, on_work, verified, rating, balance, created_at, updated_at, password_hash, organization_id
 from users
 where id = $1
 `
@@ -32,12 +32,13 @@ func (q *Queries) GetByID(ctx context.Context, id int64) (*User, error) {
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.PasswordHash,
+		&i.OrganizationID,
 	)
 	return &i, err
 }
 
 const list = `-- name: List :many
-select id, tg_id, full_name, email, phone, role, on_work, verified, rating, balance, created_at, updated_at, password_hash
+select id, tg_id, full_name, email, phone, role, on_work, verified, rating, balance, created_at, updated_at, password_hash, organization_id
 from users
 limit $1
 offset $2
@@ -71,6 +72,7 @@ func (q *Queries) List(ctx context.Context, arg ListParams) ([]*User, error) {
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.PasswordHash,
+			&i.OrganizationID,
 		); err != nil {
 			return nil, err
 		}

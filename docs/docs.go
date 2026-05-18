@@ -416,6 +416,12 @@ const docTemplate = `{
                 "on_work": {
                     "type": "boolean"
                 },
+                "organization_id": {
+                    "type": "integer"
+                },
+                "organization_name": {
+                    "type": "string"
+                },
                 "phone": {
                     "type": "string"
                 },

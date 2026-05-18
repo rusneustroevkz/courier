@@ -35,7 +35,7 @@ func (q *Queries) Create(ctx context.Context, arg CreateParams) error {
 }
 
 const getByTgID = `-- name: GetByTgID :one
-select id, tg_id, full_name, email, phone, role, on_work, verified, rating, balance, created_at, updated_at, password_hash
+select id, tg_id, full_name, email, phone, role, on_work, verified, rating, balance, created_at, updated_at, password_hash, organization_id
 from users
 where tg_id = $1
 `
@@ -57,6 +57,7 @@ func (q *Queries) GetByTgID(ctx context.Context, tgID sql.NullInt64) (*User, err
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.PasswordHash,
+		&i.OrganizationID,
 	)
 	return &i, err
 }

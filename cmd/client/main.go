@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"github.com/rusneustroevkz/courier/internal/client/auth"
+	"github.com/rusneustroevkz/courier/internal/client/organizations"
 	"github.com/rusneustroevkz/courier/pkg/middlewares"
 	"log/slog"
 	"net/http"
@@ -75,8 +76,10 @@ func main() {
 		telegramBot.Start()
 	}()
 
+	organizationsRepository := organizations.New(db.DB)
+
 	usersRepository := users.New(db.DB)
-	usersService := users.NewService(usersRepository, telegramBot)
+	usersService := users.NewService(usersRepository, telegramBot, organizationsRepository)
 	usersController := users.NewController(usersService)
 
 	authRepository := auth.New(db.DB)

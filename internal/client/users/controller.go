@@ -28,16 +28,18 @@ type GetMeResponse struct {
 	Data   *GetMeResponseData `json:"data,omitempty"`
 }
 type GetMeResponseData struct {
-	ID       int64   `json:"id,omitempty"`
-	TgID     int64   `json:"tg_id,omitempty"`
-	FullName string  `json:"full_name,omitempty"`
-	Email    string  `json:"email,omitempty"`
-	Phone    string  `json:"phone,omitempty"`
-	Role     string  `json:"role,omitempty"`
-	OnWork   bool    `json:"on_work,omitempty"`
-	Verified bool    `json:"verified,omitempty"`
-	Rating   float64 `json:"rating,omitempty"`
-	Balance  float64 `json:"balance,omitempty"`
+	ID               int64   `json:"id,omitempty"`
+	TgID             int64   `json:"tg_id,omitempty"`
+	FullName         string  `json:"full_name,omitempty"`
+	Email            string  `json:"email,omitempty"`
+	Phone            string  `json:"phone,omitempty"`
+	Role             string  `json:"role,omitempty"`
+	OnWork           bool    `json:"on_work,omitempty"`
+	Verified         bool    `json:"verified,omitempty"`
+	Rating           float64 `json:"rating,omitempty"`
+	Balance          float64 `json:"balance,omitempty"`
+	OrganizationID   int64   `json:"organization_id,omitempty"`
+	OrganizationName string  `json:"organization_name,omitempty"`
 }
 
 // GetMe Данные о профиле
@@ -110,6 +112,12 @@ func (c *controller) GetMe(w http.ResponseWriter, r *http.Request) {
 		} else {
 			res.Data.Balance = balance
 		}
+	}
+	if user.OrganizationID.Valid {
+		res.Data.OrganizationID = user.OrganizationID.Int64
+	}
+	if user.OrganizationName.Valid {
+		res.Data.OrganizationName = user.OrganizationName.String
 	}
 
 	responder.Responder(w, res, http.StatusOK)
