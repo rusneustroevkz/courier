@@ -277,6 +277,64 @@
                 }
             }
         },
+        "/orders/list": {
+            "post": {
+                "description": "Список заказов",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "orders"
+                ],
+                "summary": "Список заказов",
+                "parameters": [
+                    {
+                        "description": "тело запроса",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/orders.GetAllRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/orders.GetAllResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/orders.GetAllResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/orders.GetAllResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/orders.GetAllResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/orders.GetAllResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/orders/{id}": {
             "get": {
                 "description": "Выборка заказа",
@@ -552,6 +610,134 @@
                     "additionalProperties": {
                         "type": "string"
                     }
+                }
+            }
+        },
+        "orders.GetAllData": {
+            "type": "object",
+            "properties": {
+                "courier_id": {
+                    "type": "integer"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "from_address": {
+                    "type": "string"
+                },
+                "from_lat": {
+                    "type": "string"
+                },
+                "from_lon": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "organization_id": {
+                    "type": "integer"
+                },
+                "price": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "tg_client_chat_id": {
+                    "type": "integer"
+                },
+                "tg_live_message_id": {
+                    "type": "integer"
+                },
+                "to_address": {
+                    "type": "string"
+                },
+                "to_lat": {
+                    "type": "string"
+                },
+                "to_lon": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "orders.GetAllPagination": {
+            "type": "object",
+            "properties": {
+                "page": {
+                    "description": "Текущая страница",
+                    "type": "integer"
+                },
+                "page_size": {
+                    "description": "Размер страницы",
+                    "type": "integer"
+                },
+                "total_count": {
+                    "description": "Всего записей в БД по этому фильтру",
+                    "type": "integer"
+                },
+                "total_pages": {
+                    "type": "integer"
+                }
+            }
+        },
+        "orders.GetAllRequest": {
+            "type": "object",
+            "properties": {
+                "courier_id": {
+                    "type": "integer"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "from_address": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "organization_id": {
+                    "type": "integer"
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "page_size": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "to_address": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "orders.GetAllResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/orders.GetAllData"
+                    }
+                },
+                "errors": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/orders.GetAllPagination"
                 }
             }
         },

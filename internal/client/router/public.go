@@ -51,7 +51,7 @@ func (rr *public) Routes() *chi.Mux {
 		})
 		r.With(rr.mw.Auth).Route("/orders", func(r chi.Router) {
 			r.Post("/", rr.ordersController.Create)
-			r.Get("/", rr.ordersController.GetAll)
+			r.Post("/list", rr.ordersController.GetAll)
 			r.Get("/{id}", rr.ordersController.GetByID)
 			r.Put("/", rr.ordersController.UpdateCourier)
 		})

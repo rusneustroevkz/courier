@@ -84,7 +84,7 @@ func main() {
 	usersController := users.NewController(usersService)
 
 	ordersRepository := orders.New(db.DB)
-	ordersService := orders.NewService(ordersRepository)
+	ordersService := orders.NewService(db.DB, ordersRepository)
 	ordersController := orders.NewController(usersService, ordersService)
 
 	authRepository := auth.New(db.DB)
