@@ -1,6 +1,7 @@
 package config
 
 import (
+	"github.com/rusneustroevkz/courier/pkg/middlewares"
 	"log/slog"
 	"os"
 
@@ -15,12 +16,13 @@ type Config struct {
 	// LogLevel LevelDebug -4 | LevelInfo 0 | LevelWarn 4 | LevelError 8
 	LogLevel slog.Level `yaml:"log_level"`
 	// Env local | stage | prd
-	ENV           string          `yaml:"env"`
-	PrivateServer server.Config   `yaml:"private_server"`
-	PublicServer  server.Config   `yaml:"public_server"`
-	TelegramBot   telegram.Config `yaml:"telegram_bot"`
-	Redis         redis.Config    `yaml:"redis"`
-	Postgres      postgres.Config `yaml:"postgres"`
+	ENV           string             `yaml:"env"`
+	PrivateServer server.Config      `yaml:"private_server"`
+	PublicServer  server.Config      `yaml:"public_server"`
+	TelegramBot   telegram.Config    `yaml:"telegram_bot"`
+	Redis         redis.Config       `yaml:"redis"`
+	Postgres      postgres.Config    `yaml:"postgres"`
+	Middleware    middlewares.Config `yaml:"middleware"`
 }
 
 func New(configName string) (*Config, error) {
@@ -36,6 +38,8 @@ func New(configName string) (*Config, error) {
 	if err := yaml.Unmarshal([]byte(expanded), &cfg); err != nil {
 		return nil, err
 	}
+
+	cfg.Middleware.Env = cfg.ENV
 
 	return &cfg, nil
 }

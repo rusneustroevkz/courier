@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"github.com/rusneustroevkz/courier/internal/client/auth"
+	"github.com/rusneustroevkz/courier/pkg/middlewares"
 	"log/slog"
 	"net/http"
 	"os"
@@ -12,7 +13,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/rusneustroevkz/courier/internal/client/config"
-	"github.com/rusneustroevkz/courier/internal/client/middlewares"
 	"github.com/rusneustroevkz/courier/internal/client/router"
 	"github.com/rusneustroevkz/courier/internal/client/telegram"
 	"github.com/rusneustroevkz/courier/internal/client/users"
@@ -83,7 +83,7 @@ func main() {
 	authService := auth.NewService(cfg, usersRepository, authRepository)
 	authController := auth.NewController(authService)
 
-	mw := middlewares.NewMiddleware(cfg, authService)
+	mw := middlewares.NewMiddleware(cfg.Middleware, authService)
 
 	privateRouter := router.NewPrivate()
 	privateServer := server.New(cfg.PrivateServer, privateRouter.Routes())

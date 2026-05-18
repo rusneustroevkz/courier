@@ -212,7 +212,8 @@ func (c *controller) Login(w http.ResponseWriter, r *http.Request) {
 	user, refreshToken, accessToken, err := c.authService.Login(r.Context(), req.Email, req.Password)
 	if err != nil {
 		log.ErrorContext(r.Context(), "failed login", "error", err)
-		res.Errors["error"] = "Ошибка авторизации"
+		res.Errors["message"] = "Ошибка авторизации"
+		res.Errors["error"] = err.Error()
 		responder.Responder(w, res, http.StatusInternalServerError)
 		return
 	}

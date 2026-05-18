@@ -1,6 +1,7 @@
 package config
 
 import (
+	"github.com/rusneustroevkz/courier/pkg/middlewares"
 	"log/slog"
 	"os"
 
@@ -14,14 +15,15 @@ type Config struct {
 	// LogLevel LevelDebug -4 | LevelInfo 0 | LevelWarn 4 | LevelError 8
 	LogLevel slog.Level `yaml:"log_level"`
 	// Env local | stage | prd
-	ENV                   string          `yaml:"env"`
-	PrivateServer         server.Config   `yaml:"private_server"`
-	PublicServer          server.Config   `yaml:"public_server"`
-	RenderServer          server.Config   `yaml:"render_server"`
-	TelegramBot           telegram.Config `yaml:"telegram_bot"`
-	Postgres              postgres.Config `yaml:"postgres"`
-	JWTAccessTokenSecret  string          `yaml:"jwt_access_token_secret"`
-	JWTRefreshTokenSecret string          `yaml:"jwt_refresh_token_secret"`
+	ENV                   string             `yaml:"env"`
+	PrivateServer         server.Config      `yaml:"private_server"`
+	PublicServer          server.Config      `yaml:"public_server"`
+	RenderServer          server.Config      `yaml:"render_server"`
+	TelegramBot           telegram.Config    `yaml:"telegram_bot"`
+	Postgres              postgres.Config    `yaml:"postgres"`
+	JWTAccessTokenSecret  string             `yaml:"jwt_access_token_secret"`
+	JWTRefreshTokenSecret string             `yaml:"jwt_refresh_token_secret"`
+	Middleware            middlewares.Config `yaml:"middleware"`
 }
 
 func New() (*Config, error) {
@@ -37,6 +39,8 @@ func New() (*Config, error) {
 	if err := yaml.Unmarshal([]byte(expanded), &cfg); err != nil {
 		return nil, err
 	}
+
+	cfg.Middleware.Env = cfg.ENV
 
 	return &cfg, nil
 }

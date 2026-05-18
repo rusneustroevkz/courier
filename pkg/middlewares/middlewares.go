@@ -8,9 +8,16 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-	"github.com/rusneustroevkz/courier/internal/admin/config"
 	"github.com/rusneustroevkz/courier/pkg/responder"
 )
+
+type Config struct {
+	Env string
+}
+
+type contextKey string
+
+const userIDKey contextKey = "user_id"
 
 type Middleware interface {
 	Auth(next http.Handler) http.Handler
@@ -20,12 +27,14 @@ type Middleware interface {
 }
 
 type middleware struct {
-	cfg *config.Config
+	cfg         Config
+	authService Auth
 }
 
-func NewMiddleware(cfg *config.Config) Middleware {
+func NewMiddleware(cfg Config, authService Auth) Middleware {
 	return &middleware{
-		cfg: cfg,
+		cfg:         cfg,
+		authService: authService,
 	}
 }
 
@@ -50,16 +59,49 @@ func (m *middleware) RequestID(next http.Handler) http.Handler {
 
 func (m *middleware) Auth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		next.ServeHTTP(w, r)
+		log := slog.With("method", "Auth", "path", r.URL.Path)
+		res := &Response{
+			Errors: make(map[string]string),
+		}
+
+		authHeader := r.Header.Get("Authorization")
+		if authHeader == "" {
+			log.ErrorContext(r.Context(), "no have auth header")
+			res.Errors["error"] = "Нет авторизационного заголовка"
+			responder.Responder(w, res, http.StatusUnauthorized)
+			return
+		}
+
+		parts := strings.Split(authHeader, " ")
+		if len(parts) != 2 || parts[0] != "Bearer" {
+			log.ErrorContext(r.Context(), "invalid token format")
+			res.Errors["error"] = "Невалидный формат токена"
+			responder.Responder(w, res, http.StatusUnauthorized)
+			return
+		}
+
+		tokenString := parts[1]
+
+		userID, err := m.authService.VerifyToken(tokenString)
+		if err != nil {
+			log.ErrorContext(r.Context(), "invalid or expired token")
+			res.Errors["error"] = "Невалидный или истекший токен"
+			responder.Responder(w, res, http.StatusUnauthorized)
+			return
+		}
+
+		ctx := context.WithValue(r.Context(), userIDKey, userID)
+
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
 func (m *middleware) CORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if strings.Contains(m.cfg.ENV, "prd") {
+		if strings.Contains(m.cfg.Env, "prd") {
 			w.Header().Set("Access-Control-Allow-Origin", "https://b2b-courier-14.ru")
 		}
-		if strings.Contains(m.cfg.ENV, "local") {
+		if strings.Contains(m.cfg.Env, "local") {
 			w.Header().Set("Access-Control-Allow-Origin", "*")
 		}
 

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/rusneustroevkz/courier/pkg/middlewares"
 	"log/slog"
 	"net/http"
 	"os"
@@ -11,7 +12,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/rusneustroevkz/courier/internal/admin/config"
-	"github.com/rusneustroevkz/courier/internal/admin/middlewares"
 	"github.com/rusneustroevkz/courier/internal/admin/router"
 	"github.com/rusneustroevkz/courier/internal/admin/telegram"
 	"github.com/rusneustroevkz/courier/internal/admin/users"
@@ -54,7 +54,7 @@ func main() {
 		telegramBot.Start()
 	}()
 
-	mw := middlewares.NewMiddleware(cfg)
+	mw := middlewares.NewMiddleware(cfg.Middleware, nil)
 
 	usersRepository := users.New(db.DB)
 
