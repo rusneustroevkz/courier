@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"github.com/rusneustroevkz/courier/internal/client/auth"
+	"github.com/rusneustroevkz/courier/internal/client/orders"
 	"github.com/rusneustroevkz/courier/internal/client/organizations"
 	"github.com/rusneustroevkz/courier/pkg/middlewares"
 	"log/slog"
@@ -82,6 +83,10 @@ func main() {
 	usersService := users.NewService(usersRepository, telegramBot, organizationsRepository)
 	usersController := users.NewController(usersService)
 
+	ordersRepository := orders.New(db.DB)
+	ordersService := orders.NewService(ordersRepository)
+	ordersController := orders.NewController(usersService, ordersService)
+
 	authRepository := auth.New(db.DB)
 	authService := auth.NewService(cfg, usersRepository, authRepository)
 	authController := auth.NewController(authService)
@@ -98,7 +103,7 @@ func main() {
 	}()
 	slog.Info("starting private server", "port", cfg.PrivateServer.Port)
 
-	publicRouter := router.NewPublic(mw, usersController, authController)
+	publicRouter := router.NewPublic(mw, usersController, authController, ordersController)
 	publicServer := server.New(cfg.PublicServer, publicRouter.Routes())
 	go func() {
 		if err := publicServer.Start(); err != nil && !errors.Is(err, http.ErrServerClosed) {

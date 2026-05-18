@@ -3,6 +3,7 @@ package router
 import (
 	"github.com/go-chi/chi/v5"
 	"github.com/rusneustroevkz/courier/internal/client/auth"
+	"github.com/rusneustroevkz/courier/internal/client/orders"
 	"github.com/rusneustroevkz/courier/internal/client/users"
 	"github.com/rusneustroevkz/courier/pkg/middlewares"
 )
@@ -12,16 +13,23 @@ type Public interface {
 }
 
 type public struct {
-	mw              middlewares.Middleware
-	usersController users.Controller
-	authController  auth.Controller
+	mw               middlewares.Middleware
+	usersController  users.Controller
+	authController   auth.Controller
+	ordersController orders.Controller
 }
 
-func NewPublic(mw middlewares.Middleware, usersController users.Controller, authController auth.Controller) Public {
+func NewPublic(
+	mw middlewares.Middleware,
+	usersController users.Controller,
+	authController auth.Controller,
+	ordersController orders.Controller,
+) Public {
 	return &public{
-		mw:              mw,
-		usersController: usersController,
-		authController:  authController,
+		mw:               mw,
+		usersController:  usersController,
+		authController:   authController,
+		ordersController: ordersController,
 	}
 }
 
@@ -40,6 +48,12 @@ func (rr *public) Routes() *chi.Mux {
 		})
 		r.With(rr.mw.Auth).Route("/users", func(r chi.Router) {
 			r.Get("/me", rr.usersController.GetMe)
+		})
+		r.With(rr.mw.Auth).Route("/orders", func(r chi.Router) {
+			r.Post("/", rr.ordersController.Create)
+			r.Get("/", rr.ordersController.GetAll)
+			r.Get("/{id}", rr.ordersController.GetByID)
+			r.Put("/", rr.ordersController.UpdateCourier)
 		})
 	})
 

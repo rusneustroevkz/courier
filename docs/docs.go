@@ -222,6 +222,120 @@ const docTemplate = `{
                 }
             }
         },
+        "/orders": {
+            "post": {
+                "description": "Создание заказа",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "orders"
+                ],
+                "summary": "Создание заказа",
+                "parameters": [
+                    {
+                        "description": "тело запроса",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/orders.CreateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/orders.CreateResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/orders.CreateResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/orders.CreateResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/orders.CreateResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/orders.CreateResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/orders/{id}": {
+            "get": {
+                "description": "Выборка заказа",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "orders"
+                ],
+                "summary": "Выборка заказа",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Идентификатор",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/orders.GetByIDResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/orders.GetByIDResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/orders.GetByIDResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/orders.GetByIDResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/orders.GetByIDResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/users/me": {
             "get": {
                 "description": "Данные о профиле",
@@ -376,6 +490,133 @@ const docTemplate = `{
         "auth.RegisterResponse": {
             "type": "object",
             "properties": {
+                "errors": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "orders.CreateData": {
+            "type": "object",
+            "properties": {
+                "order_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "orders.CreateRequest": {
+            "type": "object",
+            "required": [
+                "from_address",
+                "from_lat",
+                "from_lon",
+                "price",
+                "to_address",
+                "to_lat",
+                "to_lon"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "from_address": {
+                    "type": "string"
+                },
+                "from_lat": {
+                    "type": "number"
+                },
+                "from_lon": {
+                    "type": "number"
+                },
+                "price": {
+                    "type": "number"
+                },
+                "to_address": {
+                    "type": "string"
+                },
+                "to_lat": {
+                    "type": "number"
+                },
+                "to_lon": {
+                    "type": "number"
+                }
+            }
+        },
+        "orders.CreateResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/orders.CreateData"
+                },
+                "errors": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "orders.GetByIDData": {
+            "type": "object",
+            "properties": {
+                "courier_id": {
+                    "type": "integer"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "from_address": {
+                    "type": "string"
+                },
+                "from_lat": {
+                    "type": "string"
+                },
+                "from_lon": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "organization_id": {
+                    "type": "integer"
+                },
+                "price": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "tg_client_chat_id": {
+                    "type": "integer"
+                },
+                "tg_live_message_id": {
+                    "type": "integer"
+                },
+                "to_address": {
+                    "type": "string"
+                },
+                "to_lat": {
+                    "type": "string"
+                },
+                "to_lon": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "orders.GetByIDResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/orders.GetByIDData"
+                },
                 "errors": {
                     "type": "object",
                     "additionalProperties": {

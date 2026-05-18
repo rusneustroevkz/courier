@@ -4,11 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"strings"
+	"time"
 )
 
 type Service interface {
 	RegisterByTgID(ctx context.Context, params RegisterByTgID) error
-	GetByTgID(ctx context.Context, userID int64) (User, error)
+	GetByTgID(ctx context.Context, userID int64) (*GetByTgID, error)
 	UpdatePhone(ctx context.Context, params UpdatePhone) error
 }
 
@@ -47,15 +48,46 @@ func (s *service) RegisterByTgID(ctx context.Context, params RegisterByTgID) err
 	return nil
 }
 
-func (s *service) GetByTgID(ctx context.Context, userID int64) (User, error) {
+type GetByTgID struct {
+	ID        int64
+	TgID      sql.NullInt64
+	FullName  sql.NullString
+	Email     sql.NullString
+	Phone     sql.NullString
+	Role      RoleType
+	OnWork    bool
+	Verified  bool
+	Rating    sql.NullString
+	Balance   sql.NullString
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+func (s *service) GetByTgID(ctx context.Context, userID int64) (*GetByTgID, error) {
 	user, err := s.usersRepository.GetByTgID(ctx, sql.NullInt64{
 		Int64: userID,
 		Valid: userID > 0,
 	})
 	if err != nil {
-		return User{}, err
+		return nil, err
 	}
-	return user, nil
+
+	result := &GetByTgID{
+		ID:        user.ID,
+		TgID:      user.TgID,
+		FullName:  user.FullName,
+		Email:     user.Email,
+		Phone:     user.Phone,
+		Role:      user.Role,
+		OnWork:    user.OnWork,
+		Verified:  user.Verified,
+		Rating:    user.Rating,
+		Balance:   user.Balance,
+		CreatedAt: user.CreatedAt,
+		UpdatedAt: user.UpdatedAt,
+	}
+
+	return result, nil
 }
 
 type UpdatePhone struct {
