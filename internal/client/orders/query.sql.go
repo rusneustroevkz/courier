@@ -47,7 +47,7 @@ func (q *Queries) CreateOrder(ctx context.Context, arg CreateOrderParams) (int64
 }
 
 const getAll = `-- name: GetAll :many
-select id, description, organization_id, courier_id, status, from_address, from_lat, from_lon, to_address, to_lat, to_lon, price, tg_client_chat_id, tg_live_message_id, created_at, updated_at
+select id, description, organization_id, courier_id, status, from_address, from_lat, from_lon, to_address, to_lat, to_lon, price, tg_client_chat_id, tg_live_message_id, created_at, updated_at, branch_id, courier_earnings, delivery_distance_meters, tg_courier_chat_id, accepted_at, picked_up_at, delivered_at, cancelled_at
 from orders
 where organization_id = $1
 offset $2
@@ -86,6 +86,14 @@ func (q *Queries) GetAll(ctx context.Context, arg GetAllParams) ([]*Order, error
 			&i.TgLiveMessageID,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.BranchID,
+			&i.CourierEarnings,
+			&i.DeliveryDistanceMeters,
+			&i.TgCourierChatID,
+			&i.AcceptedAt,
+			&i.PickedUpAt,
+			&i.DeliveredAt,
+			&i.CancelledAt,
 		); err != nil {
 			return nil, err
 		}
@@ -101,7 +109,7 @@ func (q *Queries) GetAll(ctx context.Context, arg GetAllParams) ([]*Order, error
 }
 
 const getByID = `-- name: GetByID :one
-select id, description, organization_id, courier_id, status, from_address, from_lat, from_lon, to_address, to_lat, to_lon, price, tg_client_chat_id, tg_live_message_id, created_at, updated_at
+select id, description, organization_id, courier_id, status, from_address, from_lat, from_lon, to_address, to_lat, to_lon, price, tg_client_chat_id, tg_live_message_id, created_at, updated_at, branch_id, courier_earnings, delivery_distance_meters, tg_courier_chat_id, accepted_at, picked_up_at, delivered_at, cancelled_at
 from orders
 where id = $1 and organization_id = $2
 `
@@ -131,6 +139,14 @@ func (q *Queries) GetByID(ctx context.Context, arg GetByIDParams) (*Order, error
 		&i.TgLiveMessageID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.BranchID,
+		&i.CourierEarnings,
+		&i.DeliveryDistanceMeters,
+		&i.TgCourierChatID,
+		&i.AcceptedAt,
+		&i.PickedUpAt,
+		&i.DeliveredAt,
+		&i.CancelledAt,
 	)
 	return &i, err
 }

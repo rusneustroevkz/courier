@@ -3,8 +3,10 @@ package main
 import (
 	"context"
 	"github.com/rusneustroevkz/courier/internal/client/auth"
+	"github.com/rusneustroevkz/courier/internal/client/dadata"
 	"github.com/rusneustroevkz/courier/internal/client/orders"
 	"github.com/rusneustroevkz/courier/internal/client/organizations"
+	"github.com/rusneustroevkz/courier/internal/client/organizations_branches"
 	"github.com/rusneustroevkz/courier/pkg/middlewares"
 	"log/slog"
 	"net/http"
@@ -79,6 +81,12 @@ func main() {
 
 	organizationsRepository := organizations.New(db.DB)
 
+	dadataClient := dadata.NewDadata()
+
+	organizationsBranchesRepository := organizations_branches.New(db.DB)
+	organizationsBranchesService := organizations_branches.NewService(dadataClient, organizationsBranchesRepository)
+	organizationsBranchesController := organizations_branches.NewController(organizationsBranchesService)
+
 	usersRepository := users.New(db.DB)
 	usersService := users.NewService(usersRepository, telegramBot, organizationsRepository)
 	usersController := users.NewController(usersService)
@@ -103,7 +111,7 @@ func main() {
 	}()
 	slog.Info("starting private server", "port", cfg.PrivateServer.Port)
 
-	publicRouter := router.NewPublic(mw, usersController, authController, ordersController)
+	publicRouter := router.NewPublic(mw, usersController, authController, ordersController, organizationsBranchesController)
 	publicServer := server.New(cfg.PublicServer, publicRouter.Routes())
 	go func() {
 		if err := publicServer.Start(); err != nil && !errors.Is(err, http.ErrServerClosed) {

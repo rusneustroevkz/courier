@@ -57,20 +57,28 @@ func (ns NullOrderStatus) Value() (driver.Value, error) {
 }
 
 type Order struct {
-	ID              int64          `db:"id"`
-	Description     sql.NullString `db:"description"`
-	OrganizationID  int64          `db:"organization_id"`
-	CourierID       sql.NullInt64  `db:"courier_id"`
-	Status          OrderStatus    `db:"status"`
-	FromAddress     string         `db:"from_address"`
-	FromLat         string         `db:"from_lat"`
-	FromLon         string         `db:"from_lon"`
-	ToAddress       string         `db:"to_address"`
-	ToLat           string         `db:"to_lat"`
-	ToLon           string         `db:"to_lon"`
-	Price           string         `db:"price"`
-	TgClientChatID  sql.NullInt64  `db:"tg_client_chat_id"`
-	TgLiveMessageID sql.NullInt64  `db:"tg_live_message_id"`
-	CreatedAt       time.Time      `db:"created_at"`
-	UpdatedAt       time.Time      `db:"updated_at"`
+	ID                     int64          `db:"id"`
+	Description            sql.NullString `db:"description"`
+	OrganizationID         int64          `db:"organization_id"`
+	CourierID              sql.NullInt64  `db:"courier_id"`
+	Status                 OrderStatus    `db:"status"`
+	FromAddress            string         `db:"from_address"`
+	FromLat                string         `db:"from_lat"`
+	FromLon                string         `db:"from_lon"`
+	ToAddress              string         `db:"to_address"`
+	ToLat                  string         `db:"to_lat"`
+	ToLon                  string         `db:"to_lon"`
+	Price                  string         `db:"price"`
+	TgClientChatID         sql.NullInt64  `db:"tg_client_chat_id"`
+	TgLiveMessageID        sql.NullInt64  `db:"tg_live_message_id"`
+	CreatedAt              time.Time      `db:"created_at"`
+	UpdatedAt              time.Time      `db:"updated_at"`
+	BranchID               sql.NullInt64  `db:"branch_id"`
+	CourierEarnings        string         `db:"courier_earnings"`
+	DeliveryDistanceMeters int32          `db:"delivery_distance_meters"`
+	TgCourierChatID        sql.NullInt64  `db:"tg_courier_chat_id"`
+	AcceptedAt             sql.NullTime   `db:"accepted_at"`
+	PickedUpAt             sql.NullTime   `db:"picked_up_at"`
+	DeliveredAt            sql.NullTime   `db:"delivered_at"`
+	CancelledAt            sql.NullTime   `db:"cancelled_at"`
 }

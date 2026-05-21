@@ -570,7 +570,6 @@ const docTemplate = `{
                 "from_address",
                 "from_lat",
                 "from_lon",
-                "price",
                 "to_address",
                 "to_lat",
                 "to_lon"
@@ -586,9 +585,6 @@ const docTemplate = `{
                     "type": "number"
                 },
                 "from_lon": {
-                    "type": "number"
-                },
-                "price": {
                     "type": "number"
                 },
                 "to_address": {

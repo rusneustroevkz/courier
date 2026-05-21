@@ -40,7 +40,6 @@ type CreateRequest struct {
 	ToAddress   string  `json:"to_address" validate:"required"`
 	ToLat       float64 `json:"to_lat" validate:"required"`
 	ToLon       float64 `json:"to_lon" validate:"required"`
-	Price       float64 `json:"price" validate:"required"`
 	Description string  `json:"description" validate:"omitempty"`
 }
 type CreateResponse struct {
@@ -110,7 +109,6 @@ func (c *controller) Create(w http.ResponseWriter, r *http.Request) {
 		ToAddress:      req.ToAddress,
 		ToLat:          req.ToLat,
 		ToLon:          req.ToLon,
-		Price:          req.Price,
 		Description:    req.Description,
 	}
 	id, err := c.ordersService.Create(r.Context(), params)

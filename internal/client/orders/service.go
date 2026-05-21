@@ -3,10 +3,11 @@ package orders
 import (
 	"context"
 	"database/sql"
+	"strconv"
+
 	"github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
-	"strconv"
 )
 
 type Service interface {
@@ -35,7 +36,6 @@ type Create struct {
 	ToAddress      string
 	ToLat          float64
 	ToLon          float64
-	Price          float64
 	Description    string
 }
 
@@ -48,7 +48,6 @@ func (s *service) Create(ctx context.Context, order Create) (int64, error) {
 		ToAddress:      order.ToAddress,
 		ToLat:          strconv.FormatFloat(order.ToLat, 'g', -1, 64),
 		ToLon:          strconv.FormatFloat(order.ToLon, 'g', -1, 64),
-		Price:          strconv.FormatFloat(order.Price, 'g', -1, 64),
 		Description: sql.NullString{
 			String: order.Description,
 			Valid:  order.Description != "",

@@ -4,6 +4,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/rusneustroevkz/courier/internal/client/auth"
 	"github.com/rusneustroevkz/courier/internal/client/orders"
+	"github.com/rusneustroevkz/courier/internal/client/organizations_branches"
 	"github.com/rusneustroevkz/courier/internal/client/users"
 	"github.com/rusneustroevkz/courier/pkg/middlewares"
 )
@@ -13,10 +14,11 @@ type Public interface {
 }
 
 type public struct {
-	mw               middlewares.Middleware
-	usersController  users.Controller
-	authController   auth.Controller
-	ordersController orders.Controller
+	mw                              middlewares.Middleware
+	usersController                 users.Controller
+	authController                  auth.Controller
+	ordersController                orders.Controller
+	organizationsBranchesController organizations_branches.Controller
 }
 
 func NewPublic(
@@ -24,12 +26,14 @@ func NewPublic(
 	usersController users.Controller,
 	authController auth.Controller,
 	ordersController orders.Controller,
+	organizationsBranchesController organizations_branches.Controller,
 ) Public {
 	return &public{
-		mw:               mw,
-		usersController:  usersController,
-		authController:   authController,
-		ordersController: ordersController,
+		mw:                              mw,
+		usersController:                 usersController,
+		authController:                  authController,
+		ordersController:                ordersController,
+		organizationsBranchesController: organizationsBranchesController,
 	}
 }
 
@@ -54,6 +58,12 @@ func (rr *public) Routes() *chi.Mux {
 			r.Post("/list", rr.ordersController.GetAll)
 			r.Get("/{id}", rr.ordersController.GetByID)
 			r.Put("/", rr.ordersController.UpdateCourier)
+		})
+		r.With(rr.mw.Auth).Route("/organizations-branches", func(r chi.Router) {
+			r.Post("/", rr.organizationsBranchesController.Create)
+			r.Post("/list", rr.organizationsBranchesController.List)
+			r.Get("/{id}", rr.organizationsBranchesController.GetByID)
+			r.Post("/suggest", rr.organizationsBranchesController.Suggest)
 		})
 	})
 
