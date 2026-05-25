@@ -8,6 +8,7 @@ import (
 	"github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
+	"github.com/rusneustroevkz/courier/internal/client/organizations_branches"
 )
 
 type Service interface {
@@ -19,39 +20,59 @@ type Service interface {
 type service struct {
 	db               *sqlx.DB
 	ordersRepository Querier
+	branchesRepo     organizations_branches.Querier
 }
 
-func NewService(db *sqlx.DB, ordersRepository Querier) Service {
+func NewService(db *sqlx.DB, ordersRepository Querier, branchesRepo organizations_branches.Querier) Service {
 	return &service{
 		db:               db,
 		ordersRepository: ordersRepository,
+		branchesRepo:     branchesRepo,
 	}
 }
 
 type Create struct {
 	OrganizationID int64
-	FromAddress    string
-	FromLat        float64
-	FromLon        float64
+	UserID         int64
 	ToAddress      string
 	ToLat          float64
 	ToLon          float64
 	Description    string
 }
 
-func (s *service) Create(ctx context.Context, order Create) (int64, error) {
+func (s *service) Create(ctx context.Context, args Create) (int64, error) {
+	getCurrentSelectedParams := organizations_branches.GetCurrentSelectedParams{
+		OrganizationID: args.OrganizationID,
+		UserSelected:   sql.NullInt64{Int64: args.UserID, Valid: args.UserID != 0},
+	}
+	branch, err := s.branchesRepo.GetCurrentSelected(ctx, getCurrentSelectedParams)
+	if err != nil {
+		return 0, err
+	}
+
+	if branch == nil || branch.ID == 0 {
+		return 0, errors.New("branch not found")
+	}
+	if !branch.Latitude.Valid || !branch.Longitude.Valid {
+		return 0, errors.New("invalid coords")
+	}
+	if branch.Latitude.String == "" || branch.Longitude.String == "" {
+		return 0, errors.New("bad coords")
+	}
+
 	params := CreateOrderParams{
-		OrganizationID: order.OrganizationID,
-		FromAddress:    order.FromAddress,
-		FromLat:        strconv.FormatFloat(order.FromLat, 'g', -1, 64),
-		FromLon:        strconv.FormatFloat(order.FromLon, 'g', -1, 64),
-		ToAddress:      order.ToAddress,
-		ToLat:          strconv.FormatFloat(order.ToLat, 'g', -1, 64),
-		ToLon:          strconv.FormatFloat(order.ToLon, 'g', -1, 64),
+		OrganizationID: args.OrganizationID,
+		FromAddress:    branch.Address,
+		FromLat:        branch.Latitude.String,
+		FromLon:        branch.Longitude.String,
+		ToAddress:      args.ToAddress,
+		ToLat:          strconv.FormatFloat(args.ToLat, 'g', -1, 64),
+		ToLon:          strconv.FormatFloat(args.ToLon, 'g', -1, 64),
 		Description: sql.NullString{
-			String: order.Description,
-			Valid:  order.Description != "",
+			String: args.Description,
+			Valid:  args.Description != "",
 		},
+		Price: "0.00",
 	}
 
 	return s.ordersRepository.CreateOrder(ctx, params)
@@ -84,8 +105,8 @@ type GetAll struct {
 }
 type GetAllResult struct {
 	Data       []Order
-	TotalCount int64 `json:"total_count"` // Всего записей в БД по этому фильтру
-	TotalPages int64 `json:"total_pages"`
+	TotalCount int64
+	TotalPages int64
 }
 
 func (s *service) GetAll(ctx context.Context, filter GetAll) (*GetAllResult, error) {

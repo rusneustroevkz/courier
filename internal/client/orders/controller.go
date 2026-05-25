@@ -34,9 +34,6 @@ func NewController(usersService users.Service, ordersService Service) Controller
 }
 
 type CreateRequest struct {
-	FromAddress string  `json:"from_address" validate:"required"`
-	FromLat     float64 `json:"from_lat" validate:"required"`
-	FromLon     float64 `json:"from_lon" validate:"required"`
 	ToAddress   string  `json:"to_address" validate:"required"`
 	ToLat       float64 `json:"to_lat" validate:"required"`
 	ToLon       float64 `json:"to_lon" validate:"required"`
@@ -103,9 +100,7 @@ func (c *controller) Create(w http.ResponseWriter, r *http.Request) {
 
 	params := Create{
 		OrganizationID: user.OrganizationID.Int64,
-		FromAddress:    req.FromAddress,
-		FromLat:        req.FromLat,
-		FromLon:        req.FromLon,
+		UserID:         userID,
 		ToAddress:      req.ToAddress,
 		ToLat:          req.ToLat,
 		ToLon:          req.ToLon,

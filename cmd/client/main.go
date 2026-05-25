@@ -2,12 +2,6 @@ package main
 
 import (
 	"context"
-	"github.com/rusneustroevkz/courier/internal/client/auth"
-	"github.com/rusneustroevkz/courier/internal/client/dadata"
-	"github.com/rusneustroevkz/courier/internal/client/orders"
-	"github.com/rusneustroevkz/courier/internal/client/organizations"
-	"github.com/rusneustroevkz/courier/internal/client/organizations_branches"
-	"github.com/rusneustroevkz/courier/pkg/middlewares"
 	"log/slog"
 	"net/http"
 	"os"
@@ -16,10 +10,16 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/rusneustroevkz/courier/internal/client/auth"
 	"github.com/rusneustroevkz/courier/internal/client/config"
+	"github.com/rusneustroevkz/courier/internal/client/dadata"
+	"github.com/rusneustroevkz/courier/internal/client/orders"
+	"github.com/rusneustroevkz/courier/internal/client/organizations"
+	"github.com/rusneustroevkz/courier/internal/client/organizations_branches"
 	"github.com/rusneustroevkz/courier/internal/client/router"
 	"github.com/rusneustroevkz/courier/internal/client/telegram"
 	"github.com/rusneustroevkz/courier/internal/client/users"
+	"github.com/rusneustroevkz/courier/pkg/middlewares"
 	"github.com/rusneustroevkz/courier/pkg/postgres"
 	"github.com/rusneustroevkz/courier/pkg/server"
 )
@@ -70,29 +70,30 @@ func main() {
 		os.Exit(1)
 	}
 
-	telegramBot, err := telegram.NewTelegram(cfg.TelegramBot)
-	if err != nil {
-		slog.Error("failed to initialize telegram bot", "error", err)
-		os.Exit(1)
-	}
-	go func() {
-		telegramBot.Start()
-	}()
+	telegramBot := &telegram.Telegram{}
+	//telegramBot, err := telegram.NewTelegram(cfg.TelegramBot)
+	//if err != nil {
+	//	slog.Error("failed to initialize telegram bot", "error", err)
+	//	os.Exit(1)
+	//}
+	//go func() {
+	//	telegramBot.Start()
+	//}()
 
 	organizationsRepository := organizations.New(db.DB)
 
 	dadataClient := dadata.NewDadata()
 
-	organizationsBranchesRepository := organizations_branches.New(db.DB)
-	organizationsBranchesService := organizations_branches.NewService(dadataClient, organizationsBranchesRepository)
-	organizationsBranchesController := organizations_branches.NewController(organizationsBranchesService)
-
 	usersRepository := users.New(db.DB)
 	usersService := users.NewService(usersRepository, telegramBot, organizationsRepository)
 	usersController := users.NewController(usersService)
 
+	organizationsBranchesRepository := organizations_branches.New(db.DB)
+	organizationsBranchesService := organizations_branches.NewService(dadataClient, organizationsBranchesRepository, db.DB)
+	organizationsBranchesController := organizations_branches.NewController(organizationsBranchesService, usersService)
+
 	ordersRepository := orders.New(db.DB)
-	ordersService := orders.NewService(db.DB, ordersRepository)
+	ordersService := orders.NewService(db.DB, ordersRepository, organizationsBranchesRepository)
 	ordersController := orders.NewController(usersService, ordersService)
 
 	authRepository := auth.New(db.DB)

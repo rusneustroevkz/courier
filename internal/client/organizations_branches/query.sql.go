@@ -12,9 +12,10 @@ import (
 	"github.com/lib/pq"
 )
 
-const create = `-- name: Create :exec
+const create = `-- name: Create :one
 insert into organization_branches(organization_id, name, address, latitude, longitude, phone)
 values($1, $2, $3, $4, $5, $6)
+returning id
 `
 
 type CreateParams struct {
@@ -26,8 +27,8 @@ type CreateParams struct {
 	Phone          []string       `db:"phone"`
 }
 
-func (q *Queries) Create(ctx context.Context, arg CreateParams) error {
-	_, err := q.db.ExecContext(ctx, create,
+func (q *Queries) Create(ctx context.Context, arg CreateParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, create,
 		arg.OrganizationID,
 		arg.Name,
 		arg.Address,
@@ -35,11 +36,13 @@ func (q *Queries) Create(ctx context.Context, arg CreateParams) error {
 		arg.Longitude,
 		pq.Array(arg.Phone),
 	)
-	return err
+	var id int64
+	err := row.Scan(&id)
+	return id, err
 }
 
 const getByID = `-- name: GetByID :one
-select id, organization_id, name, address, latitude, longitude, phone, is_active, created_at, updated_at
+select id, organization_id, name, address, latitude, longitude, phone, is_active, created_at, updated_at, user_selected
 from organization_branches
 where organization_id = $1 and id = $2
 `
@@ -63,12 +66,13 @@ func (q *Queries) GetByID(ctx context.Context, arg GetByIDParams) (*Organization
 		&i.IsActive,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.UserSelected,
 	)
 	return &i, err
 }
 
 const getByName = `-- name: GetByName :one
-select id, organization_id, name, address, latitude, longitude, phone, is_active, created_at, updated_at
+select id, organization_id, name, address, latitude, longitude, phone, is_active, created_at, updated_at, user_selected
 from organization_branches
 where organization_id = $1 and name = $2
 `
@@ -92,12 +96,43 @@ func (q *Queries) GetByName(ctx context.Context, arg GetByNameParams) (*Organiza
 		&i.IsActive,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.UserSelected,
+	)
+	return &i, err
+}
+
+const getCurrentSelected = `-- name: GetCurrentSelected :one
+select id, organization_id, name, address, latitude, longitude, phone, is_active, created_at, updated_at, user_selected
+from organization_branches
+where organization_id = $1 and user_selected = $2
+`
+
+type GetCurrentSelectedParams struct {
+	OrganizationID int64         `db:"organization_id"`
+	UserSelected   sql.NullInt64 `db:"user_selected"`
+}
+
+func (q *Queries) GetCurrentSelected(ctx context.Context, arg GetCurrentSelectedParams) (*OrganizationBranch, error) {
+	row := q.db.QueryRowContext(ctx, getCurrentSelected, arg.OrganizationID, arg.UserSelected)
+	var i OrganizationBranch
+	err := row.Scan(
+		&i.ID,
+		&i.OrganizationID,
+		&i.Name,
+		&i.Address,
+		&i.Latitude,
+		&i.Longitude,
+		pq.Array(&i.Phone),
+		&i.IsActive,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.UserSelected,
 	)
 	return &i, err
 }
 
 const list = `-- name: List :many
-select id, organization_id, name, address, latitude, longitude, phone, is_active, created_at, updated_at
+select id, organization_id, name, address, latitude, longitude, phone, is_active, created_at, updated_at, user_selected
 from organization_branches
 where organization_id = $1
 `
@@ -122,6 +157,7 @@ func (q *Queries) List(ctx context.Context, organizationID int64) ([]*Organizati
 			&i.IsActive,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.UserSelected,
 		); err != nil {
 			return nil, err
 		}
@@ -134,4 +170,54 @@ func (q *Queries) List(ctx context.Context, organizationID int64) ([]*Organizati
 		return nil, err
 	}
 	return items, nil
+}
+
+const setActivation = `-- name: SetActivation :exec
+update organization_branches
+set is_active = $1
+where organization_id = $2 and id = $3
+`
+
+type SetActivationParams struct {
+	IsActive       bool  `db:"is_active"`
+	OrganizationID int64 `db:"organization_id"`
+	ID             int64 `db:"id"`
+}
+
+func (q *Queries) SetActivation(ctx context.Context, arg SetActivationParams) error {
+	_, err := q.db.ExecContext(ctx, setActivation, arg.IsActive, arg.OrganizationID, arg.ID)
+	return err
+}
+
+const setNullUserSelected = `-- name: SetNullUserSelected :exec
+update organization_branches
+set user_selected = null
+where organization_id = $1 and id = $2
+`
+
+type SetNullUserSelectedParams struct {
+	OrganizationID int64 `db:"organization_id"`
+	ID             int64 `db:"id"`
+}
+
+func (q *Queries) SetNullUserSelected(ctx context.Context, arg SetNullUserSelectedParams) error {
+	_, err := q.db.ExecContext(ctx, setNullUserSelected, arg.OrganizationID, arg.ID)
+	return err
+}
+
+const setUserSelected = `-- name: SetUserSelected :exec
+update organization_branches
+set user_selected = $1
+where organization_id = $2 and id = $3
+`
+
+type SetUserSelectedParams struct {
+	UserSelected   sql.NullInt64 `db:"user_selected"`
+	OrganizationID int64         `db:"organization_id"`
+	ID             int64         `db:"id"`
+}
+
+func (q *Queries) SetUserSelected(ctx context.Context, arg SetUserSelectedParams) error {
+	_, err := q.db.ExecContext(ctx, setUserSelected, arg.UserSelected, arg.OrganizationID, arg.ID)
+	return err
 }

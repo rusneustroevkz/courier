@@ -9,10 +9,14 @@ import (
 )
 
 type Querier interface {
-	Create(ctx context.Context, arg CreateParams) error
+	Create(ctx context.Context, arg CreateParams) (int64, error)
 	GetByID(ctx context.Context, arg GetByIDParams) (*OrganizationBranch, error)
 	GetByName(ctx context.Context, arg GetByNameParams) (*OrganizationBranch, error)
+	GetCurrentSelected(ctx context.Context, arg GetCurrentSelectedParams) (*OrganizationBranch, error)
 	List(ctx context.Context, organizationID int64) ([]*OrganizationBranch, error)
+	SetActivation(ctx context.Context, arg SetActivationParams) error
+	SetNullUserSelected(ctx context.Context, arg SetNullUserSelectedParams) error
+	SetUserSelected(ctx context.Context, arg SetUserSelectedParams) error
 }
 
 var _ Querier = (*Queries)(nil)

@@ -64,6 +64,8 @@ func (rr *public) Routes() *chi.Mux {
 			r.Post("/list", rr.organizationsBranchesController.List)
 			r.Get("/{id}", rr.organizationsBranchesController.GetByID)
 			r.Post("/suggest", rr.organizationsBranchesController.Suggest)
+			r.Post("/set-activation", rr.organizationsBranchesController.SetActivation)
+			r.Post("/set-user-selected", rr.organizationsBranchesController.SetUserSelected)
 		})
 	})
 

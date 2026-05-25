@@ -20,4 +20,5 @@ type OrganizationBranch struct {
 	IsActive       bool           `db:"is_active"`
 	CreatedAt      time.Time      `db:"created_at"`
 	UpdatedAt      time.Time      `db:"updated_at"`
+	UserSelected   sql.NullInt64  `db:"user_selected"`
 }
