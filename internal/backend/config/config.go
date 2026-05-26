@@ -1,11 +1,11 @@
 package config
 
 import (
-	"github.com/rusneustroevkz/courier/pkg/middlewares"
 	"log/slog"
 	"os"
 
 	"github.com/rusneustroevkz/courier/internal/backend/telegram"
+	"github.com/rusneustroevkz/courier/pkg/middlewares"
 	"github.com/rusneustroevkz/courier/pkg/postgres"
 	"github.com/rusneustroevkz/courier/pkg/redis"
 	"github.com/rusneustroevkz/courier/pkg/server"
@@ -25,10 +25,10 @@ type Config struct {
 	Middleware    middlewares.Config `yaml:"middleware"`
 }
 
-func New(configName string) (*Config, error) {
+func New() (*Config, error) {
 	var cfg Config
 
-	data, err := os.ReadFile(configName)
+	data, err := os.ReadFile("./config/config.yml")
 	if err != nil {
 		return nil, err
 	}

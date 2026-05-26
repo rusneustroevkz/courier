@@ -52,6 +52,14 @@ func (t *Telegram) CommandStart(ct telebot.Context) error {
 	what.WriteString("<blockquote>")
 	what.WriteString("ID: " + id)
 
+	onWorkText := ""
+	if user.OnWork {
+		onWorkText = "на смене"
+	} else {
+		onWorkText = "отдыхает"
+	}
+	what.WriteString("\nСмена: " + onWorkText)
+
 	if user.FullName.Valid {
 		what.WriteString("\nИмя: " + user.FullName.String)
 	}

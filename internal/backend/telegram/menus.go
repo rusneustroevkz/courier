@@ -30,6 +30,17 @@ func (t *Telegram) Menu(ct telebot.Context) *telebot.ReplyMarkup {
 			telebot.Btn{Text: "Поделитесь с номером телефона", Unique: CallbackTypeShareContact},
 		})
 	}
+	if user.Phone.Valid && user.Verified {
+		if user.OnWork {
+			rows = append(rows, telebot.Row{
+				telebot.Btn{Text: "Закончить смену", Unique: CallbackTypeOnWork},
+			})
+		} else {
+			rows = append(rows, telebot.Row{
+				telebot.Btn{Text: "Начать смену", Unique: CallbackTypeOnWork},
+			})
+		}
+	}
 
 	rows = append(rows, telebot.Row{
 		telebot.Btn{Text: "Помощь", Unique: "help"},

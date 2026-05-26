@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/rusneustroevkz/courier/internal/backend/orders"
 	"github.com/rusneustroevkz/courier/internal/backend/users"
 	"gopkg.in/telebot.v4"
 )
@@ -16,11 +17,12 @@ type Config struct {
 }
 
 type Telegram struct {
-	bot          *telebot.Bot
-	usersService users.Service
+	bot           *telebot.Bot
+	usersService  users.Service
+	ordersService orders.Service
 }
 
-func NewTelegram(cfg Config, usersService users.Service) (*Telegram, error) {
+func NewTelegram(cfg Config, usersService users.Service, ordersService orders.Service) (*Telegram, error) {
 	pref := telebot.Settings{
 		Token:     cfg.Token,
 		Poller:    &telebot.LongPoller{Timeout: time.Duration(cfg.Timeout) * time.Second},
@@ -41,8 +43,9 @@ func NewTelegram(cfg Config, usersService users.Service) (*Telegram, error) {
 	}
 
 	t := &Telegram{
-		bot:          bot,
-		usersService: usersService,
+		bot:           bot,
+		usersService:  usersService,
+		ordersService: ordersService,
 	}
 
 	bot.Handle(CommandStart, t.CommandStart)
@@ -62,6 +65,9 @@ func (t *Telegram) OnCallback(ct telebot.Context) error {
 
 	if len(parts) > 1 && strings.HasPrefix(parts[1], CallbackTypeShareContact) {
 		return t.CallbackShareContact(parts, ctx, ct)
+	}
+	if len(parts) > 1 && strings.HasPrefix(parts[1], CallbackTypeOnWork) {
+		return t.CallbackOnWork(parts, ctx, ct)
 	}
 
 	return nil

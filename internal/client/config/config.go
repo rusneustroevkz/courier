@@ -1,11 +1,11 @@
 package config
 
 import (
-	"github.com/rusneustroevkz/courier/pkg/middlewares"
 	"log/slog"
 	"os"
 
 	"github.com/rusneustroevkz/courier/internal/client/telegram"
+	"github.com/rusneustroevkz/courier/pkg/middlewares"
 	"github.com/rusneustroevkz/courier/pkg/postgres"
 	"github.com/rusneustroevkz/courier/pkg/server"
 	"gopkg.in/yaml.v3"

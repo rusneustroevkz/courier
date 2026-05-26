@@ -9,6 +9,8 @@ import (
 )
 
 func (t *Telegram) OnContact(ct telebot.Context) error {
+	_ = t.bot.Notify(ct.Recipient(), telebot.Typing)
+
 	ctx := context.Background()
 	log := slog.With("method", "OnContact")
 

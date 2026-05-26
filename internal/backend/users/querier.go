@@ -12,6 +12,7 @@ import (
 type Querier interface {
 	Create(ctx context.Context, arg CreateParams) error
 	GetByTgID(ctx context.Context, tgID sql.NullInt64) (*User, error)
+	SetOnWork(ctx context.Context, arg SetOnWorkParams) error
 	UpdatePhoneByTgID(ctx context.Context, arg UpdatePhoneByTgIDParams) error
 }
 

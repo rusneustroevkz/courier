@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/rusneustroevkz/courier/internal/backend/config"
+	"github.com/rusneustroevkz/courier/internal/backend/orders"
 	"github.com/rusneustroevkz/courier/internal/backend/router"
 	"github.com/rusneustroevkz/courier/internal/backend/telegram"
 	"github.com/rusneustroevkz/courier/internal/backend/users"
@@ -30,7 +31,7 @@ func main() {
 	logger := slog.New(loggerHandler)
 	slog.SetDefault(logger)
 
-	cfg, err := config.New(os.Getenv("CONFIG_NAME"))
+	cfg, err := config.New()
 	if err != nil {
 		slog.Error("failed to initialize config", "error", err)
 		os.Exit(1)
@@ -52,10 +53,12 @@ func main() {
 	}
 
 	usersRepository := users.New(db.DB)
+	ordersRepository := orders.New(db.DB)
 
 	usersService := users.NewService(usersRepository)
+	ordersService := orders.NewService(ordersRepository)
 
-	telegramBot, err := telegram.NewTelegram(cfg.TelegramBot, usersService)
+	telegramBot, err := telegram.NewTelegram(cfg.TelegramBot, usersService, ordersService)
 	if err != nil {
 		slog.Error("failed to initialize telegram bot", "error", err)
 		os.Exit(1)

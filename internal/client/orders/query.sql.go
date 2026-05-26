@@ -12,8 +12,8 @@ import (
 )
 
 const createOrder = `-- name: CreateOrder :one
-insert into orders(organization_id, from_address, from_lat, from_lon, to_address, to_lat, to_lon, price, description)
-values($1, $2, $3, $4, $5, $6, $7, $8, $9)
+insert into orders(organization_id, from_address, from_lat, from_lon, to_address, to_lat, to_lon, description)
+values($1, $2, $3, $4, $5, $6, $7, $8)
 returning id
 `
 
@@ -25,7 +25,6 @@ type CreateOrderParams struct {
 	ToAddress      string         `db:"to_address"`
 	ToLat          string         `db:"to_lat"`
 	ToLon          string         `db:"to_lon"`
-	Price          string         `db:"price"`
 	Description    sql.NullString `db:"description"`
 }
 
@@ -38,7 +37,6 @@ func (q *Queries) CreateOrder(ctx context.Context, arg CreateOrderParams) (int64
 		arg.ToAddress,
 		arg.ToLat,
 		arg.ToLon,
-		arg.Price,
 		arg.Description,
 	)
 	var id int64
@@ -47,7 +45,7 @@ func (q *Queries) CreateOrder(ctx context.Context, arg CreateOrderParams) (int64
 }
 
 const getAll = `-- name: GetAll :many
-select id, description, organization_id, courier_id, status, from_address, from_lat, from_lon, to_address, to_lat, to_lon, price, tg_client_chat_id, tg_live_message_id, created_at, updated_at, branch_id, courier_earnings, delivery_distance_meters, tg_courier_chat_id, accepted_at, picked_up_at, delivered_at, cancelled_at
+select id, description, organization_id, courier_id, status, from_address, from_lat, from_lon, to_address, to_lat, to_lon, tg_client_chat_id, tg_live_message_id, created_at, updated_at, branch_id, courier_earnings, delivery_distance_meters, tg_courier_chat_id, accepted_at, picked_up_at, delivered_at, cancelled_at
 from orders
 where organization_id = $1
 offset $2
@@ -81,7 +79,6 @@ func (q *Queries) GetAll(ctx context.Context, arg GetAllParams) ([]*Order, error
 			&i.ToAddress,
 			&i.ToLat,
 			&i.ToLon,
-			&i.Price,
 			&i.TgClientChatID,
 			&i.TgLiveMessageID,
 			&i.CreatedAt,
@@ -109,7 +106,7 @@ func (q *Queries) GetAll(ctx context.Context, arg GetAllParams) ([]*Order, error
 }
 
 const getByID = `-- name: GetByID :one
-select id, description, organization_id, courier_id, status, from_address, from_lat, from_lon, to_address, to_lat, to_lon, price, tg_client_chat_id, tg_live_message_id, created_at, updated_at, branch_id, courier_earnings, delivery_distance_meters, tg_courier_chat_id, accepted_at, picked_up_at, delivered_at, cancelled_at
+select id, description, organization_id, courier_id, status, from_address, from_lat, from_lon, to_address, to_lat, to_lon, tg_client_chat_id, tg_live_message_id, created_at, updated_at, branch_id, courier_earnings, delivery_distance_meters, tg_courier_chat_id, accepted_at, picked_up_at, delivered_at, cancelled_at
 from orders
 where id = $1 and organization_id = $2
 `
@@ -134,7 +131,6 @@ func (q *Queries) GetByID(ctx context.Context, arg GetByIDParams) (*Order, error
 		&i.ToAddress,
 		&i.ToLat,
 		&i.ToLon,
-		&i.Price,
 		&i.TgClientChatID,
 		&i.TgLiveMessageID,
 		&i.CreatedAt,

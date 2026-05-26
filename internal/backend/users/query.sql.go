@@ -62,6 +62,22 @@ func (q *Queries) GetByTgID(ctx context.Context, tgID sql.NullInt64) (*User, err
 	return &i, err
 }
 
+const setOnWork = `-- name: SetOnWork :exec
+update users
+set on_work = $1
+where tg_id = $2
+`
+
+type SetOnWorkParams struct {
+	OnWork bool          `db:"on_work"`
+	TgID   sql.NullInt64 `db:"tg_id"`
+}
+
+func (q *Queries) SetOnWork(ctx context.Context, arg SetOnWorkParams) error {
+	_, err := q.db.ExecContext(ctx, setOnWork, arg.OnWork, arg.TgID)
+	return err
+}
+
 const updatePhoneByTgID = `-- name: UpdatePhoneByTgID :exec
 update users
 set phone = $1

@@ -11,6 +11,7 @@ type Service interface {
 	RegisterByTgID(ctx context.Context, params RegisterByTgID) error
 	GetByTgID(ctx context.Context, userID int64) (*GetByTgID, error)
 	UpdatePhone(ctx context.Context, params UpdatePhone) error
+	SetOnWork(ctx context.Context, args SetOnWork) error
 }
 
 type service struct {
@@ -108,4 +109,21 @@ func (s *service) UpdatePhone(ctx context.Context, params UpdatePhone) error {
 	}
 
 	return s.usersRepository.UpdatePhoneByTgID(ctx, updatePhoneByTgIDParams)
+}
+
+type SetOnWork struct {
+	UserID int64
+	OnWork bool
+}
+
+func (s *service) SetOnWork(ctx context.Context, args SetOnWork) error {
+	setOnWorkParams := SetOnWorkParams{
+		OnWork: args.OnWork,
+		TgID: sql.NullInt64{
+			Int64: args.UserID,
+			Valid: args.UserID > 0,
+		},
+	}
+
+	return s.usersRepository.SetOnWork(ctx, setOnWorkParams)
 }

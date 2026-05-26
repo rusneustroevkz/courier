@@ -4,8 +4,8 @@ from orders
 where id = $1 and organization_id = $2;
 
 -- name: CreateOrder :one
-insert into orders(organization_id, from_address, from_lat, from_lon, to_address, to_lat, to_lon, price, description)
-values($1, $2, $3, $4, $5, $6, $7, $8, $9)
+insert into orders(organization_id, from_address, from_lat, from_lon, to_address, to_lat, to_lon, description)
+values($1, $2, $3, $4, $5, $6, $7, $8)
 returning id;
 
 -- name: GetAll :many

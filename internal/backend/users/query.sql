@@ -11,3 +11,8 @@ where tg_id = $1;
 update users
 set phone = $1
 where tg_id = $2;
+
+-- name: SetOnWork :exec
+update users
+set on_work = $1
+where tg_id = $2;
