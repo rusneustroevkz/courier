@@ -3,16 +3,19 @@ package telegram
 import (
 	"context"
 	"fmt"
+	"github.com/rusneustroevkz/courier/internal/backend/orders"
 	"github.com/rusneustroevkz/courier/internal/backend/users"
 	"gopkg.in/telebot.v4"
 	"log/slog"
+	"strconv"
 	"strings"
 )
 
 const (
-	CallbackTypeShareContact  = "share_contact"
-	CallbackTypeOnWork        = "on_work"
-	CallbackTypeShareLocation = "on_location"
+	CallbackShareContact  = "share_contact"
+	CallbackOnWork        = "on_work"
+	CallbackShareLocation = "on_location"
+	CallbackAcceptOrder   = "accept_order"
 )
 
 func (t *Telegram) CallbackShareContact(parts []string, ctx context.Context, ct telebot.Context) error {
@@ -45,6 +48,12 @@ func (t *Telegram) CallbackShareLocation(parts []string, ctx context.Context, ct
 
 func (t *Telegram) CallbackOnWork(parts []string, ctx context.Context, ct telebot.Context) error {
 	log := slog.With("method", "CallbackOnWork")
+
+	if len(parts) < 2 {
+		log.ErrorContext(ctx, "invalid parts length", "parts_len", len(parts))
+		return ct.Send("Ошибка обработки запроса", t.Menu(ct))
+	}
+
 	payload := strings.Split(parts[1], "|")
 	if len(payload) < 1 {
 		log.Error("invalid callback parts")
@@ -58,64 +67,105 @@ func (t *Telegram) CallbackOnWork(parts []string, ctx context.Context, ct telebo
 		return ct.Send("Ошибка выборки пользователя, обратитесь в поддержку", t.Menu(ct))
 	}
 
-	if user == nil || user.ID == 0 {
-		log.ErrorContext(ctx, "user id is nil", "user_id", userID, "err", err)
-		return ct.Send("Невалидный пользователь, обратитесь в поддержку", t.Menu(ct))
+	if user == nil {
+		log.ErrorContext(ctx, "user not found", "user_id", userID, "err", err)
+		return ct.Send("Пользователь не найден, обратитесь в поддержку", t.Menu(ct))
 	}
 
 	if !user.IsShareLocation {
 		return ct.Send("Для начала смены поделитесь геопозицией", t.Menu(ct))
 	}
 
+	targetState := !user.OnWork
 	params := users.SetOnWork{
 		UserID: userID,
-		OnWork: true,
-	}
-	errorText := ""
-	successText := ""
-	if user.OnWork {
-		params.OnWork = true
-		errorText = "начала"
-		successText = "началась"
-	} else {
-		params.OnWork = false
-		errorText = "конца"
-		successText = "закончилась"
-	}
-	err = t.usersService.SetOnWork(ctx, params)
-	if err != nil {
-		log.ErrorContext(ctx, "failed to set on_work", "user_id", userID, "err", err)
-		return ct.Send(fmt.Sprintf("Ошибка %s смены, обратитесь в поддержку", errorText), t.Menu(ct))
+		OnWork: targetState,
 	}
 
+	// Формируем понятный текст для UI заранее
+	var actionWord, successText string
+	if targetState {
+		actionWord = "открытия"
+		successText = "началась"
+	} else {
+		actionWord = "закрытия"
+		successText = "закончилась"
+	}
+
+	err = t.usersService.SetOnWork(ctx, params)
+	if err != nil {
+		log.ErrorContext(ctx, "failed to set on_work", "user_id", userID, "err", err, "target_state", targetState)
+		return ct.Send(fmt.Sprintf("Ошибка %s смены, обратитесь в поддержку", actionWord), t.Menu(ct))
+	}
+
+	// Если пользователь закрыл смену, не нужно показывать ему доступные заказы
+	if !targetState {
+		return ct.Send(fmt.Sprintf("Смена %s", successText), t.Menu(ct))
+	}
+
+	// 3. Обработка заказов при открытии смены
 	list, err := t.ordersService.GetPendingOrders(ctx)
 	if err != nil {
 		log.ErrorContext(ctx, "failed to get pending orders", "user_id", userID, "err", err)
-		return ct.Send("Ошибка списка заказов, обратитесь в поддержку", t.Menu(ct))
+		return ct.Send("Ошибка получения списка заказов, обратитесь в поддержку", t.Menu(ct))
 	}
 
-	var rows []telebot.Row
+	// Ограничиваем количество выводимых заказов во избежание флуда Telegram API
+	maxOrdersToShow := 5
+	for i, item := range list {
+		if i >= maxOrdersToShow {
+			_ = ct.Send("...и другие заказы доступны в меню.")
+			break
+		}
 
-	rows = append(rows, telebot.Row{
-		telebot.Btn{Text: "Принять", Unique: "accept_order"},
-	})
+		// Выносим инициализацию разметки за пределы для чистоты
+		menu := &telebot.ReplyMarkup{ResizeKeyboard: true}
+		menu.Inline(telebot.Row{
+			telebot.Btn{Text: "Принять", Unique: CallbackAcceptOrder, Data: strconv.FormatInt(item.ID, 10)},
+		})
 
-	menu := &telebot.ReplyMarkup{
-		ResizeKeyboard: true,
-		RemoveKeyboard: true,
-	}
+		// Использование fmt.Sprintf здесь будет лаконичнее и быстрее, чем strings.Builder для 2 строк
+		msgText := fmt.Sprintf("Откуда: %s\nКуда: %s", item.FromAddress, item.ToAddress)
 
-	menu.Inline(rows...)
-
-	for _, item := range list {
-		what := strings.Builder{}
-		what.WriteString("Откуда: " + item.FromAddress)
-		what.WriteString("\nКуда: " + item.ToAddress)
-
-		if err = ct.Send(what.String(), menu); err != nil {
-			log.ErrorContext(ctx, "failed to send pending order", "user_id", userID, "err", err)
+		if err = ct.Send(msgText, menu); err != nil {
+			log.ErrorContext(ctx, "failed to send pending order", "user_id", userID, "order_id", item.ID, "err", err)
 		}
 	}
 
 	return ct.Send(fmt.Sprintf("Смена %s", successText), t.Menu(ct))
+}
+
+func (t *Telegram) CallbackAcceptOrder(parts []string, ctx context.Context, ct telebot.Context) error {
+	log := slog.With("method", "CallbackAcceptOrder")
+
+	if len(parts) < 3 {
+		log.ErrorContext(ctx, "invalid parts length", "parts_len", len(parts))
+		return ct.Send("Ошибка обработки запроса", t.Menu(ct))
+	}
+
+	payload := strings.Split(parts[1], "|")
+	if len(payload) < 1 {
+		log.Error("invalid callback parts")
+		return ct.Send("Ошбика коллбэк", t.Menu(ct))
+	}
+
+	orderID, err := strconv.ParseInt(parts[2], 10, 64)
+	if err != nil {
+		log.ErrorContext(ctx, "failed to parse order id", "order_id", parts[2], "err", err)
+		return ct.Send("Ошибка обработки айди заказа", t.Menu(ct))
+	}
+
+	userID := ct.Sender().ID
+
+	acceptOrderParams := orders.AcceptOrder{
+		CourierID: userID,
+		Status:    orders.OrderStatusAccepted,
+		ID:        orderID,
+	}
+	if err := t.ordersService.AcceptOrder(ctx, acceptOrderParams); err != nil {
+		log.ErrorContext(ctx, "failed accept order", "err", err)
+		return ct.Send("Ошибка принятия заказа", t.Menu(ct))
+	}
+
+	return ct.Send("Заказ принят", t.Menu(ct))
 }

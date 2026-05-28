@@ -68,8 +68,6 @@ type Order struct {
 	ToAddress              string         `db:"to_address"`
 	ToLat                  string         `db:"to_lat"`
 	ToLon                  string         `db:"to_lon"`
-	TgClientChatID         sql.NullInt64  `db:"tg_client_chat_id"`
-	TgLiveMessageID        sql.NullInt64  `db:"tg_live_message_id"`
 	CreatedAt              time.Time      `db:"created_at"`
 	UpdatedAt              time.Time      `db:"updated_at"`
 	BranchID               sql.NullInt64  `db:"branch_id"`

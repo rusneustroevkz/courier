@@ -2,12 +2,14 @@ package orders
 
 import (
 	"context"
+	"database/sql"
 	"time"
 )
 
 type Service interface {
 	GetByID(ctx context.Context, orderID int64) (*GetByIDResult, error)
 	GetPendingOrders(ctx context.Context) ([]GetByIDResult, error)
+	AcceptOrder(ctx context.Context, args AcceptOrder) error
 }
 
 type service struct {
@@ -74,12 +76,6 @@ func (s *service) GetByID(ctx context.Context, orderID int64) (*GetByIDResult, e
 	if getByIDResult.CourierID.Valid {
 		result.CourierID = getByIDResult.CourierID.Int64
 	}
-	if getByIDResult.TgClientChatID.Valid {
-		result.TgClientChatID = getByIDResult.TgClientChatID.Int64
-	}
-	if getByIDResult.TgLiveMessageID.Valid {
-		result.TgLiveMessageID = getByIDResult.TgLiveMessageID.Int64
-	}
 	if getByIDResult.BranchID.Valid {
 		result.BranchID = getByIDResult.BranchID.Int64
 	}
@@ -132,12 +128,6 @@ func (s *service) GetPendingOrders(ctx context.Context) ([]GetByIDResult, error)
 		if item.CourierID.Valid {
 			val.CourierID = item.CourierID.Int64
 		}
-		if item.TgClientChatID.Valid {
-			val.TgClientChatID = item.TgClientChatID.Int64
-		}
-		if item.TgLiveMessageID.Valid {
-			val.TgLiveMessageID = item.TgLiveMessageID.Int64
-		}
 		if item.BranchID.Valid {
 			val.BranchID = item.BranchID.Int64
 		}
@@ -161,4 +151,23 @@ func (s *service) GetPendingOrders(ctx context.Context) ([]GetByIDResult, error)
 	}
 
 	return result, nil
+}
+
+type AcceptOrder struct {
+	CourierID int64
+	Status    OrderStatus
+	ID        int64
+}
+
+func (s *service) AcceptOrder(ctx context.Context, args AcceptOrder) error {
+	acceptOrderParams := AcceptOrderParams{
+		CourierID: sql.NullInt64{
+			Int64: args.CourierID,
+			Valid: args.CourierID != 0,
+		},
+		Status: args.Status,
+		ID:     args.ID,
+	}
+
+	return s.ordersRepository.AcceptOrder(ctx, acceptOrderParams)
 }

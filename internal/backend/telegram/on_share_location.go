@@ -62,12 +62,9 @@ func (t *Telegram) OnEditedLocation(ct telebot.Context) error {
 	lng := msg.Location.Lng
 	livePeriod := msg.Location.LivePeriod
 
-	slog.Info("Обновление LIVE геопозиции",
-		"user_id", msg.Sender.ID,
-		"lat", lat,
-		"lng", lng,
-		"period", livePeriod,
-	)
+	_ = lat
+	_ = lng
+	_ = livePeriod
 
 	// TODO: Сохраняем новые координаты в вашу базу данных
 	// ctx := context.Background()

@@ -27,24 +27,24 @@ func (t *Telegram) Menu(ct telebot.Context) *telebot.ReplyMarkup {
 	}
 	if !user.Phone.Valid {
 		rows = append(rows, telebot.Row{
-			telebot.Btn{Text: "Поделитесь с номером телефона", Unique: CallbackTypeShareContact},
+			telebot.Btn{Text: "Поделитесь с номером телефона", Unique: CallbackShareContact},
 		})
 	}
 	if user.Phone.Valid && user.Verified {
 		if user.OnWork {
 			rows = append(rows, telebot.Row{
-				telebot.Btn{Text: "Закончить смену", Unique: CallbackTypeOnWork},
+				telebot.Btn{Text: "Закончить смену", Unique: CallbackOnWork},
 			})
 		} else {
 			rows = append(rows, telebot.Row{
-				telebot.Btn{Text: "Начать смену", Unique: CallbackTypeOnWork},
+				telebot.Btn{Text: "Начать смену", Unique: CallbackOnWork},
 			})
 		}
 	}
 
 	if !user.IsShareLocation {
 		rows = append(rows, telebot.Row{
-			telebot.Btn{Text: "Как поделиться геопозицией", Unique: CallbackTypeShareLocation},
+			telebot.Btn{Text: "Как поделиться геопозицией", Unique: CallbackShareLocation},
 		})
 	}
 

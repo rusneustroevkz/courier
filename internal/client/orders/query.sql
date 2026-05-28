@@ -17,5 +17,5 @@ limit $3;
 
 -- name: UpdateCourier :exec
 update orders
-set courier_id = $1, tg_client_chat_id = $2, tg_live_message_id = $3, updated_at = $4
-where id = $5;
+set courier_id = $1, status = $2, updated_at = now()
+where id = $3;

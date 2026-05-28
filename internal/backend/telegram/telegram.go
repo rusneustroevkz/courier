@@ -65,14 +65,17 @@ func (t *Telegram) OnCallback(ct telebot.Context) error {
 
 	parts := strings.Split(ct.Callback().Data, "\f")
 
-	if len(parts) > 1 && strings.HasPrefix(parts[1], CallbackTypeShareContact) {
+	if len(parts) > 1 && strings.HasPrefix(parts[1], CallbackShareContact) {
 		return t.CallbackShareContact(parts, ctx, ct)
 	}
-	if len(parts) > 1 && strings.HasPrefix(parts[1], CallbackTypeOnWork) {
+	if len(parts) > 1 && strings.HasPrefix(parts[1], CallbackOnWork) {
 		return t.CallbackOnWork(parts, ctx, ct)
 	}
-	if len(parts) > 1 && strings.HasPrefix(parts[1], CallbackTypeShareLocation) {
+	if len(parts) > 1 && strings.HasPrefix(parts[1], CallbackShareLocation) {
 		return t.CallbackShareLocation(parts, ctx, ct)
+	}
+	if len(parts) > 1 && strings.HasPrefix(parts[1], CallbackAcceptOrder) {
+		return t.CallbackAcceptOrder(parts, ctx, ct)
 	}
 
 	return nil

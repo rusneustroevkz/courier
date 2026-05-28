@@ -7,3 +7,8 @@ where id = $1;
 select *
 from orders
 where status = 'created';
+
+-- name: AcceptOrder :exec
+update orders
+set courier_id = $1, status = $2, tg_courier_chat_id = $3, accepted_at = now()
+where id = $4;

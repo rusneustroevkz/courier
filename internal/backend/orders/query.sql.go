@@ -7,10 +7,34 @@ package orders
 
 import (
 	"context"
+	"database/sql"
 )
 
+const acceptOrder = `-- name: AcceptOrder :exec
+update orders
+set courier_id = $1, status = $2, tg_courier_chat_id = $3, accepted_at = now()
+where id = $4
+`
+
+type AcceptOrderParams struct {
+	CourierID       sql.NullInt64 `db:"courier_id"`
+	Status          OrderStatus   `db:"status"`
+	TgCourierChatID sql.NullInt64 `db:"tg_courier_chat_id"`
+	ID              int64         `db:"id"`
+}
+
+func (q *Queries) AcceptOrder(ctx context.Context, arg AcceptOrderParams) error {
+	_, err := q.db.ExecContext(ctx, acceptOrder,
+		arg.CourierID,
+		arg.Status,
+		arg.TgCourierChatID,
+		arg.ID,
+	)
+	return err
+}
+
 const getByID = `-- name: GetByID :one
-select id, description, organization_id, courier_id, status, from_address, from_lat, from_lon, to_address, to_lat, to_lon, tg_client_chat_id, tg_live_message_id, created_at, updated_at, branch_id, courier_earnings, delivery_distance_meters, tg_courier_chat_id, accepted_at, picked_up_at, delivered_at, cancelled_at
+select id, description, organization_id, courier_id, status, from_address, from_lat, from_lon, to_address, to_lat, to_lon, created_at, updated_at, branch_id, courier_earnings, delivery_distance_meters, tg_courier_chat_id, accepted_at, picked_up_at, delivered_at, cancelled_at
 from orders
 where id = $1
 `
@@ -30,8 +54,6 @@ func (q *Queries) GetByID(ctx context.Context, id int64) (*Order, error) {
 		&i.ToAddress,
 		&i.ToLat,
 		&i.ToLon,
-		&i.TgClientChatID,
-		&i.TgLiveMessageID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.BranchID,
@@ -47,7 +69,7 @@ func (q *Queries) GetByID(ctx context.Context, id int64) (*Order, error) {
 }
 
 const getPendingOrders = `-- name: GetPendingOrders :many
-select id, description, organization_id, courier_id, status, from_address, from_lat, from_lon, to_address, to_lat, to_lon, tg_client_chat_id, tg_live_message_id, created_at, updated_at, branch_id, courier_earnings, delivery_distance_meters, tg_courier_chat_id, accepted_at, picked_up_at, delivered_at, cancelled_at
+select id, description, organization_id, courier_id, status, from_address, from_lat, from_lon, to_address, to_lat, to_lon, created_at, updated_at, branch_id, courier_earnings, delivery_distance_meters, tg_courier_chat_id, accepted_at, picked_up_at, delivered_at, cancelled_at
 from orders
 where status = 'created'
 `
@@ -73,8 +95,6 @@ func (q *Queries) GetPendingOrders(ctx context.Context) ([]*Order, error) {
 			&i.ToAddress,
 			&i.ToLat,
 			&i.ToLon,
-			&i.TgClientChatID,
-			&i.TgLiveMessageID,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.BranchID,

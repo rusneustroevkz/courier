@@ -9,6 +9,7 @@ import (
 )
 
 type Querier interface {
+	AcceptOrder(ctx context.Context, arg AcceptOrderParams) error
 	GetByID(ctx context.Context, id int64) (*Order, error)
 	GetPendingOrders(ctx context.Context) ([]*Order, error)
 }

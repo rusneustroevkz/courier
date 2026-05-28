@@ -8,7 +8,6 @@ package orders
 import (
 	"context"
 	"database/sql"
-	"time"
 )
 
 const createOrder = `-- name: CreateOrder :one
@@ -45,7 +44,7 @@ func (q *Queries) CreateOrder(ctx context.Context, arg CreateOrderParams) (int64
 }
 
 const getAll = `-- name: GetAll :many
-select id, description, organization_id, courier_id, status, from_address, from_lat, from_lon, to_address, to_lat, to_lon, tg_client_chat_id, tg_live_message_id, created_at, updated_at, branch_id, courier_earnings, delivery_distance_meters, tg_courier_chat_id, accepted_at, picked_up_at, delivered_at, cancelled_at
+select id, description, organization_id, courier_id, status, from_address, from_lat, from_lon, to_address, to_lat, to_lon, created_at, updated_at, branch_id, courier_earnings, delivery_distance_meters, tg_courier_chat_id, accepted_at, picked_up_at, delivered_at, cancelled_at
 from orders
 where organization_id = $1
 offset $2
@@ -79,8 +78,6 @@ func (q *Queries) GetAll(ctx context.Context, arg GetAllParams) ([]*Order, error
 			&i.ToAddress,
 			&i.ToLat,
 			&i.ToLon,
-			&i.TgClientChatID,
-			&i.TgLiveMessageID,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.BranchID,
@@ -106,7 +103,7 @@ func (q *Queries) GetAll(ctx context.Context, arg GetAllParams) ([]*Order, error
 }
 
 const getByID = `-- name: GetByID :one
-select id, description, organization_id, courier_id, status, from_address, from_lat, from_lon, to_address, to_lat, to_lon, tg_client_chat_id, tg_live_message_id, created_at, updated_at, branch_id, courier_earnings, delivery_distance_meters, tg_courier_chat_id, accepted_at, picked_up_at, delivered_at, cancelled_at
+select id, description, organization_id, courier_id, status, from_address, from_lat, from_lon, to_address, to_lat, to_lon, created_at, updated_at, branch_id, courier_earnings, delivery_distance_meters, tg_courier_chat_id, accepted_at, picked_up_at, delivered_at, cancelled_at
 from orders
 where id = $1 and organization_id = $2
 `
@@ -131,8 +128,6 @@ func (q *Queries) GetByID(ctx context.Context, arg GetByIDParams) (*Order, error
 		&i.ToAddress,
 		&i.ToLat,
 		&i.ToLon,
-		&i.TgClientChatID,
-		&i.TgLiveMessageID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.BranchID,
@@ -149,25 +144,17 @@ func (q *Queries) GetByID(ctx context.Context, arg GetByIDParams) (*Order, error
 
 const updateCourier = `-- name: UpdateCourier :exec
 update orders
-set courier_id = $1, tg_client_chat_id = $2, tg_live_message_id = $3, updated_at = $4
-where id = $5
+set courier_id = $1, status = $2, updated_at = now()
+where id = $3
 `
 
 type UpdateCourierParams struct {
-	CourierID       sql.NullInt64 `db:"courier_id"`
-	TgClientChatID  sql.NullInt64 `db:"tg_client_chat_id"`
-	TgLiveMessageID sql.NullInt64 `db:"tg_live_message_id"`
-	UpdatedAt       time.Time     `db:"updated_at"`
-	ID              int64         `db:"id"`
+	CourierID sql.NullInt64 `db:"courier_id"`
+	Status    OrderStatus   `db:"status"`
+	ID        int64         `db:"id"`
 }
 
 func (q *Queries) UpdateCourier(ctx context.Context, arg UpdateCourierParams) error {
-	_, err := q.db.ExecContext(ctx, updateCourier,
-		arg.CourierID,
-		arg.TgClientChatID,
-		arg.TgLiveMessageID,
-		arg.UpdatedAt,
-		arg.ID,
-	)
+	_, err := q.db.ExecContext(ctx, updateCourier, arg.CourierID, arg.Status, arg.ID)
 	return err
 }
