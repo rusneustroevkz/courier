@@ -34,8 +34,54 @@ func (q *Queries) Create(ctx context.Context, arg CreateParams) error {
 	return err
 }
 
+const expiredShareLocationList = `-- name: ExpiredShareLocationList :many
+select id, tg_id, full_name, email, phone, role, on_work, verified, rating, balance, created_at, updated_at, password_hash, organization_id, is_share_location, share_location_ttl
+from users
+where share_location_ttl < now()
+`
+
+func (q *Queries) ExpiredShareLocationList(ctx context.Context) ([]*User, error) {
+	rows, err := q.db.QueryContext(ctx, expiredShareLocationList)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []*User
+	for rows.Next() {
+		var i User
+		if err := rows.Scan(
+			&i.ID,
+			&i.TgID,
+			&i.FullName,
+			&i.Email,
+			&i.Phone,
+			&i.Role,
+			&i.OnWork,
+			&i.Verified,
+			&i.Rating,
+			&i.Balance,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.PasswordHash,
+			&i.OrganizationID,
+			&i.IsShareLocation,
+			&i.ShareLocationTtl,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getByTgID = `-- name: GetByTgID :one
-select id, tg_id, full_name, email, phone, role, on_work, verified, rating, balance, created_at, updated_at, password_hash, organization_id
+select id, tg_id, full_name, email, phone, role, on_work, verified, rating, balance, created_at, updated_at, password_hash, organization_id, is_share_location, share_location_ttl
 from users
 where tg_id = $1
 `
@@ -58,6 +104,8 @@ func (q *Queries) GetByTgID(ctx context.Context, tgID sql.NullInt64) (*User, err
 		&i.UpdatedAt,
 		&i.PasswordHash,
 		&i.OrganizationID,
+		&i.IsShareLocation,
+		&i.ShareLocationTtl,
 	)
 	return &i, err
 }
@@ -75,6 +123,23 @@ type SetOnWorkParams struct {
 
 func (q *Queries) SetOnWork(ctx context.Context, arg SetOnWorkParams) error {
 	_, err := q.db.ExecContext(ctx, setOnWork, arg.OnWork, arg.TgID)
+	return err
+}
+
+const setShareLocation = `-- name: SetShareLocation :exec
+update users
+set is_share_location = $1, share_location_ttl = $2
+where tg_id = $3
+`
+
+type SetShareLocationParams struct {
+	IsShareLocation  bool          `db:"is_share_location"`
+	ShareLocationTtl sql.NullTime  `db:"share_location_ttl"`
+	TgID             sql.NullInt64 `db:"tg_id"`
+}
+
+func (q *Queries) SetShareLocation(ctx context.Context, arg SetShareLocationParams) error {
+	_, err := q.db.ExecContext(ctx, setShareLocation, arg.IsShareLocation, arg.ShareLocationTtl, arg.TgID)
 	return err
 }
 

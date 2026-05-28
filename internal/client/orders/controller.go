@@ -219,7 +219,6 @@ func (c *controller) GetByID(w http.ResponseWriter, r *http.Request) {
 		ToAddress:      order.ToAddress,
 		ToLat:          order.ToLat,
 		ToLon:          order.ToLon,
-		Price:          order.Price,
 		CreatedAt:      order.CreatedAt,
 		UpdatedAt:      order.UpdatedAt,
 	}
@@ -371,7 +370,6 @@ func (c *controller) GetAll(w http.ResponseWriter, r *http.Request) {
 			ToAddress:      order.ToAddress,
 			ToLat:          order.ToLat,
 			ToLon:          order.ToLon,
-			Price:          order.Price,
 			CreatedAt:      order.CreatedAt,
 			UpdatedAt:      order.UpdatedAt,
 		}

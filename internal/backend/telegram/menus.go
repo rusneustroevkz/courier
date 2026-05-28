@@ -42,6 +42,12 @@ func (t *Telegram) Menu(ct telebot.Context) *telebot.ReplyMarkup {
 		}
 	}
 
+	if !user.IsShareLocation {
+		rows = append(rows, telebot.Row{
+			telebot.Btn{Text: "Как поделиться геопозицией", Unique: CallbackTypeShareLocation},
+		})
+	}
+
 	rows = append(rows, telebot.Row{
 		telebot.Btn{Text: "Помощь", Unique: "help"},
 	})

@@ -33,7 +33,7 @@ func (q *Queries) CreateByEmail(ctx context.Context, arg CreateByEmailParams) er
 }
 
 const getByEmail = `-- name: GetByEmail :one
-select id, tg_id, full_name, email, phone, role, on_work, verified, rating, balance, created_at, updated_at, password_hash, organization_id
+select id, tg_id, full_name, email, phone, role, on_work, verified, rating, balance, created_at, updated_at, password_hash, organization_id, is_share_location, share_location_ttl
 from users
 where email = $1
 `
@@ -56,12 +56,14 @@ func (q *Queries) GetByEmail(ctx context.Context, email sql.NullString) (*User, 
 		&i.UpdatedAt,
 		&i.PasswordHash,
 		&i.OrganizationID,
+		&i.IsShareLocation,
+		&i.ShareLocationTtl,
 	)
 	return &i, err
 }
 
 const getByID = `-- name: GetByID :one
-select id, tg_id, full_name, email, phone, role, on_work, verified, rating, balance, created_at, updated_at, password_hash, organization_id
+select id, tg_id, full_name, email, phone, role, on_work, verified, rating, balance, created_at, updated_at, password_hash, organization_id, is_share_location, share_location_ttl
 from users
 where id = $1
 `
@@ -84,6 +86,8 @@ func (q *Queries) GetByID(ctx context.Context, id int64) (*User, error) {
 		&i.UpdatedAt,
 		&i.PasswordHash,
 		&i.OrganizationID,
+		&i.IsShareLocation,
+		&i.ShareLocationTtl,
 	)
 	return &i, err
 }

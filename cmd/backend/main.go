@@ -58,6 +58,21 @@ func main() {
 	usersService := users.NewService(usersRepository)
 	ordersService := orders.NewService(ordersRepository)
 
+	go func() {
+		t := time.NewTicker(1 * time.Minute)
+
+		for {
+			select {
+			case <-t.C:
+				if err := usersService.WorkerSetShareLocationAfterTTL(ctx); err != nil {
+					slog.Error("failed to set worker set share location after 5 seconds", "err", err)
+				}
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+
 	telegramBot, err := telegram.NewTelegram(cfg.TelegramBot, usersService, ordersService)
 	if err != nil {
 		slog.Error("failed to initialize telegram bot", "error", err)

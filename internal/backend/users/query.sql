@@ -16,3 +16,13 @@ where tg_id = $2;
 update users
 set on_work = $1
 where tg_id = $2;
+
+-- name: SetShareLocation :exec
+update users
+set is_share_location = $1, share_location_ttl = $2
+where tg_id = $3;
+
+-- name: ExpiredShareLocationList :many
+select *
+from users
+where share_location_ttl < now();

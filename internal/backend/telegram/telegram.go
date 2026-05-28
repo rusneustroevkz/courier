@@ -51,6 +51,8 @@ func NewTelegram(cfg Config, usersService users.Service, ordersService orders.Se
 	bot.Handle(CommandStart, t.CommandStart)
 	bot.Handle(telebot.OnContact, t.OnContact)
 	bot.Handle(telebot.OnCallback, t.OnCallback)
+	bot.Handle(telebot.OnLocation, t.OnLocation)
+	bot.Handle(telebot.OnEdited, t.OnEditedLocation)
 
 	slog.Info("telegram bot started", "name", bot.Me.Username)
 
@@ -68,6 +70,9 @@ func (t *Telegram) OnCallback(ct telebot.Context) error {
 	}
 	if len(parts) > 1 && strings.HasPrefix(parts[1], CallbackTypeOnWork) {
 		return t.CallbackOnWork(parts, ctx, ct)
+	}
+	if len(parts) > 1 && strings.HasPrefix(parts[1], CallbackTypeShareLocation) {
+		return t.CallbackShareLocation(parts, ctx, ct)
 	}
 
 	return nil

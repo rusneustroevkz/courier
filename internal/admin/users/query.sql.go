@@ -10,7 +10,7 @@ import (
 )
 
 const getByID = `-- name: GetByID :one
-select id, tg_id, full_name, email, phone, role, on_work, verified, rating, balance, created_at, updated_at, password_hash, organization_id
+select id, tg_id, full_name, email, phone, role, on_work, verified, rating, balance, created_at, updated_at, password_hash, organization_id, is_share_location, share_location_ttl
 from users
 where id = $1
 `
@@ -33,12 +33,14 @@ func (q *Queries) GetByID(ctx context.Context, id int64) (*User, error) {
 		&i.UpdatedAt,
 		&i.PasswordHash,
 		&i.OrganizationID,
+		&i.IsShareLocation,
+		&i.ShareLocationTtl,
 	)
 	return &i, err
 }
 
 const list = `-- name: List :many
-select id, tg_id, full_name, email, phone, role, on_work, verified, rating, balance, created_at, updated_at, password_hash, organization_id
+select id, tg_id, full_name, email, phone, role, on_work, verified, rating, balance, created_at, updated_at, password_hash, organization_id, is_share_location, share_location_ttl
 from users
 limit $1
 offset $2
@@ -73,6 +75,8 @@ func (q *Queries) List(ctx context.Context, arg ListParams) ([]*User, error) {
 			&i.UpdatedAt,
 			&i.PasswordHash,
 			&i.OrganizationID,
+			&i.IsShareLocation,
+			&i.ShareLocationTtl,
 		); err != nil {
 			return nil, err
 		}

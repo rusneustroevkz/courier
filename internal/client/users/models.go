@@ -55,18 +55,20 @@ func (ns NullRoleType) Value() (driver.Value, error) {
 }
 
 type User struct {
-	ID             int64          `db:"id"`
-	TgID           sql.NullInt64  `db:"tg_id"`
-	FullName       sql.NullString `db:"full_name"`
-	Email          sql.NullString `db:"email"`
-	Phone          sql.NullString `db:"phone"`
-	Role           RoleType       `db:"role"`
-	OnWork         bool           `db:"on_work"`
-	Verified       bool           `db:"verified"`
-	Rating         sql.NullString `db:"rating"`
-	Balance        sql.NullString `db:"balance"`
-	CreatedAt      time.Time      `db:"created_at"`
-	UpdatedAt      time.Time      `db:"updated_at"`
-	PasswordHash   sql.NullString `db:"password_hash"`
-	OrganizationID sql.NullInt64  `db:"organization_id"`
+	ID               int64          `db:"id"`
+	TgID             sql.NullInt64  `db:"tg_id"`
+	FullName         sql.NullString `db:"full_name"`
+	Email            sql.NullString `db:"email"`
+	Phone            sql.NullString `db:"phone"`
+	Role             RoleType       `db:"role"`
+	OnWork           bool           `db:"on_work"`
+	Verified         bool           `db:"verified"`
+	Rating           sql.NullString `db:"rating"`
+	Balance          sql.NullString `db:"balance"`
+	CreatedAt        time.Time      `db:"created_at"`
+	UpdatedAt        time.Time      `db:"updated_at"`
+	PasswordHash     sql.NullString `db:"password_hash"`
+	OrganizationID   sql.NullInt64  `db:"organization_id"`
+	IsShareLocation  bool           `db:"is_share_location"`
+	ShareLocationTtl sql.NullTime   `db:"share_location_ttl"`
 }

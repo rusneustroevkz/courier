@@ -10,8 +10,9 @@ import (
 )
 
 const (
-	CallbackTypeShareContact = "share_contact"
-	CallbackTypeOnWork       = "on_work"
+	CallbackTypeShareContact  = "share_contact"
+	CallbackTypeOnWork        = "on_work"
+	CallbackTypeShareLocation = "on_location"
 )
 
 func (t *Telegram) CallbackShareContact(parts []string, ctx context.Context, ct telebot.Context) error {
@@ -29,6 +30,17 @@ func (t *Telegram) CallbackShareContact(parts []string, ctx context.Context, ct 
 	contactMenu.Reply(contactMenu.Row(btnContact))
 
 	return ct.Send("Поделитесь с номером телефона", contactMenu)
+}
+
+func (t *Telegram) CallbackShareLocation(parts []string, ctx context.Context, ct telebot.Context) error {
+	defer ct.Respond()
+
+	instruction := "📍 *Как отправить живую геопозицию:*\n\n" +
+		"1. Нажмите на иконку *скрепки* (или `+`) рядом с полем ввода сообщения.\n" +
+		"2. Выберите пункт *'Геопозиция'* (Location).\n" +
+		"3. Нажмите *'Транслировать мою геопозицию'* (Share My Live Location) и выберите время (например, 8 часов)."
+
+	return ct.Send(instruction, telebot.ModeMarkdown)
 }
 
 func (t *Telegram) CallbackOnWork(parts []string, ctx context.Context, ct telebot.Context) error {
@@ -49,6 +61,10 @@ func (t *Telegram) CallbackOnWork(parts []string, ctx context.Context, ct telebo
 	if user == nil || user.ID == 0 {
 		log.ErrorContext(ctx, "user id is nil", "user_id", userID, "err", err)
 		return ct.Send("Невалидный пользователь, обратитесь в поддержку", t.Menu(ct))
+	}
+
+	if !user.IsShareLocation {
+		return ct.Send("Для начала смены поделитесь геопозицией", t.Menu(ct))
 	}
 
 	params := users.SetOnWork{
@@ -94,9 +110,9 @@ func (t *Telegram) CallbackOnWork(parts []string, ctx context.Context, ct telebo
 	for _, item := range list {
 		what := strings.Builder{}
 		what.WriteString("Откуда: " + item.FromAddress)
-		what.WriteString("Куда: " + item.ToAddress)
+		what.WriteString("\nКуда: " + item.ToAddress)
 
-		if err = ct.Send(what, menu); err != nil {
+		if err = ct.Send(what.String(), menu); err != nil {
 			log.ErrorContext(ctx, "failed to send pending order", "user_id", userID, "err", err)
 		}
 	}

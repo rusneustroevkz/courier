@@ -72,7 +72,6 @@ func (s *service) Create(ctx context.Context, args Create) (int64, error) {
 			String: args.Description,
 			Valid:  args.Description != "",
 		},
-		Price: "0.00",
 	}
 
 	return s.ordersRepository.CreateOrder(ctx, params)
