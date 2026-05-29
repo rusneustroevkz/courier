@@ -12,7 +12,7 @@ type Config struct {
 }
 
 type Redis struct {
-	client *redis.Client
+	Client *redis.Client
 }
 
 func New(cfg Config) (*Redis, error) {
@@ -31,10 +31,10 @@ func New(cfg Config) (*Redis, error) {
 	slog.Info("redis client started", "addr", cfg.Addr)
 
 	return &Redis{
-		client: rdb,
+		Client: rdb,
 	}, nil
 }
 
 func (r *Redis) Close() error {
-	return r.client.Close()
+	return r.Client.Close()
 }

@@ -3,31 +3,42 @@ package orders
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"strconv"
 
 	"github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
+	redislib "github.com/redis/go-redis/v9"
 	"github.com/rusneustroevkz/courier/internal/client/organizations_branches"
+	"github.com/rusneustroevkz/courier/pkg/redis"
 )
 
 type Service interface {
 	Create(ctx context.Context, order Create) (int64, error)
 	GetByID(ctx context.Context, args GetByID) (*Order, error)
 	GetAll(ctx context.Context, filter GetAll) (*GetAllResult, error)
+	GetCourierLocation(ctx context.Context, args GetCourierLocation) (*GetCourierLocationResult, error)
 }
 
 type service struct {
 	db               *sqlx.DB
 	ordersRepository Querier
 	branchesRepo     organizations_branches.Querier
+	redisClient      *redis.Redis
 }
 
-func NewService(db *sqlx.DB, ordersRepository Querier, branchesRepo organizations_branches.Querier) Service {
+func NewService(
+	db *sqlx.DB,
+	ordersRepository Querier,
+	branchesRepo organizations_branches.Querier,
+	redisClient *redis.Redis,
+) Service {
 	return &service{
 		db:               db,
 		ordersRepository: ordersRepository,
 		branchesRepo:     branchesRepo,
+		redisClient:      redisClient,
 	}
 }
 
@@ -179,5 +190,49 @@ func (s *service) GetAll(ctx context.Context, filter GetAll) (*GetAllResult, err
 		Data:       orders,
 		TotalCount: totalCount,
 		TotalPages: totalPages,
+	}, nil
+}
+
+type GetCourierLocation struct {
+	OrderID        int64
+	OrganizationID int64
+}
+type GetCourierLocationResult struct {
+	Lat float32
+	Lon float32
+}
+
+func (s *service) GetCourierLocation(ctx context.Context, args GetCourierLocation) (*GetCourierLocationResult, error) {
+	getByIDParams := GetByIDParams{
+		ID:             args.OrderID,
+		OrganizationID: args.OrganizationID,
+	}
+	order, err := s.ordersRepository.GetByID(ctx, getByIDParams)
+	if err != nil {
+		return nil, err
+	}
+
+	if !order.CourierID.Valid {
+		return nil, errors.New("invalid courier id")
+	}
+
+	courierIDString := strconv.Itoa(int(order.TgCourierChatID.Int64))
+	val, err := s.redisClient.Client.Get(ctx, "location_"+courierIDString).Result()
+	if errors.Is(err, redislib.Nil) {
+		return nil, errors.New("Ключ не существует или срок его действия истек")
+	} else if err != nil {
+		return nil, errors.New("Ошибка при получении данных: " + err.Error())
+	}
+
+	var courierLocation redis.UserLocation
+
+	err = json.Unmarshal([]byte(val), &courierLocation)
+	if err != nil {
+		return nil, errors.New("Ошибка декодирования данных: " + err.Error())
+	}
+
+	return &GetCourierLocationResult{
+		Lat: courierLocation.Latitude,
+		Lon: courierLocation.Longitude,
 	}, nil
 }

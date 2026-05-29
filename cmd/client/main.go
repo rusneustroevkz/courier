@@ -21,6 +21,7 @@ import (
 	"github.com/rusneustroevkz/courier/internal/client/users"
 	"github.com/rusneustroevkz/courier/pkg/middlewares"
 	"github.com/rusneustroevkz/courier/pkg/postgres"
+	"github.com/rusneustroevkz/courier/pkg/redis"
 	"github.com/rusneustroevkz/courier/pkg/server"
 )
 
@@ -70,15 +71,20 @@ func main() {
 		os.Exit(1)
 	}
 
-	telegramBot := &telegram.Telegram{}
-	//telegramBot, err := telegram.NewTelegram(cfg.TelegramBot)
-	//if err != nil {
-	//	slog.Error("failed to initialize telegram bot", "error", err)
-	//	os.Exit(1)
-	//}
-	//go func() {
-	//	telegramBot.Start()
-	//}()
+	redisClient, err := redis.New(cfg.Redis)
+	if err != nil {
+		slog.Error("failed to initialize redis", "error", err)
+		os.Exit(1)
+	}
+
+	telegramBot, err := telegram.NewTelegram(cfg.TelegramBot)
+	if err != nil {
+		slog.Error("failed to initialize telegram bot", "error", err)
+		os.Exit(1)
+	}
+	go func() {
+		telegramBot.Start()
+	}()
 
 	organizationsRepository := organizations.New(db.DB)
 
@@ -93,7 +99,7 @@ func main() {
 	organizationsBranchesController := organizations_branches.NewController(organizationsBranchesService, usersService)
 
 	ordersRepository := orders.New(db.DB)
-	ordersService := orders.NewService(db.DB, ordersRepository, organizationsBranchesRepository)
+	ordersService := orders.NewService(db.DB, ordersRepository, organizationsBranchesRepository, redisClient)
 	ordersController := orders.NewController(usersService, ordersService)
 
 	authRepository := auth.New(db.DB)
@@ -129,6 +135,9 @@ func main() {
 
 	slog.Info("shutting down servers...")
 
+	if err := redisClient.Close(); err != nil {
+		slog.Error("failed to close redis", "error", err)
+	}
 	if err := privateServer.Stop(shutdownCtx); err != nil {
 		slog.Error("failed to stop private server", "error", err)
 	}

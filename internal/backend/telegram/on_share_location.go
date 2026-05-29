@@ -2,10 +2,14 @@ package telegram
 
 import (
 	"context"
-	"github.com/rusneustroevkz/courier/internal/backend/users"
-	"gopkg.in/telebot.v4"
+	"encoding/json"
 	"log/slog"
+	"strconv"
 	"time"
+
+	"github.com/rusneustroevkz/courier/internal/backend/users"
+	"github.com/rusneustroevkz/courier/pkg/redis"
+	"gopkg.in/telebot.v4"
 )
 
 func (t *Telegram) OnLocation(ct telebot.Context) error {
@@ -58,17 +62,22 @@ func (t *Telegram) OnEditedLocation(ct telebot.Context) error {
 		return ct.Send("Трансляция геопозиции остановлена. Смена завершена.")
 	}
 
-	lat := msg.Location.Lat
-	lng := msg.Location.Lng
-	livePeriod := msg.Location.LivePeriod
+	userLocation := redis.UserLocation{
+		Latitude:  msg.Location.Lat,
+		Longitude: msg.Location.Lng,
+	}
 
-	_ = lat
-	_ = lng
-	_ = livePeriod
+	jsonData, err := json.Marshal(userLocation)
+	if err != nil {
+		log.ErrorContext(ctx, "failed to marshal location to json", "err", err)
+		return ct.Respond()
+	}
 
-	// TODO: Сохраняем новые координаты в вашу базу данных
-	// ctx := context.Background()
-	// t.usersService.UpdateLocation(ctx, msg.Sender.ID, lat, lng)
+	userIDString := strconv.Itoa(int(ct.Sender().ID))
+	err = t.redisClient.Client.Set(ctx, "location_"+userIDString, jsonData, redis.UserLocationTTL).Err()
+	if err != nil {
+		log.ErrorContext(ctx, "failed set share location", "err", err)
+	}
 
-	return nil
+	return ct.Respond()
 }

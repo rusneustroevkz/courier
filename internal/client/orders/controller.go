@@ -19,6 +19,7 @@ type Controller interface {
 	GetByID(w http.ResponseWriter, r *http.Request)
 	GetAll(w http.ResponseWriter, r *http.Request)
 	UpdateCourier(w http.ResponseWriter, r *http.Request)
+	GetCourierLocation(w http.ResponseWriter, r *http.Request)
 }
 
 type controller struct {
@@ -229,12 +230,6 @@ func (c *controller) GetByID(w http.ResponseWriter, r *http.Request) {
 	if order.CourierID.Valid {
 		res.Data.CourierID = order.CourierID.Int64
 	}
-	if order.TgClientChatID.Valid {
-		res.Data.TgClientChatID = order.TgClientChatID.Int64
-	}
-	if order.TgLiveMessageID.Valid {
-		res.Data.TgLiveMessageID = order.TgLiveMessageID.Int64
-	}
 
 	responder.Responder(w, res, http.StatusOK)
 }
@@ -380,12 +375,6 @@ func (c *controller) GetAll(w http.ResponseWriter, r *http.Request) {
 		if order.CourierID.Valid {
 			item.CourierID = order.CourierID.Int64
 		}
-		if order.TgClientChatID.Valid {
-			item.TgClientChatID = order.TgClientChatID.Int64
-		}
-		if order.TgLiveMessageID.Valid {
-			item.TgLiveMessageID = order.TgLiveMessageID.Int64
-		}
 
 		res.Data = append(res.Data, item)
 	}
@@ -394,3 +383,89 @@ func (c *controller) GetAll(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *controller) UpdateCourier(w http.ResponseWriter, r *http.Request) {}
+
+type GetCourierLocationRequest struct {
+	OrderID int64 `json:"order_id"`
+}
+type GetCourierLocationResponse struct {
+	Errors map[string]string       `json:"errors,omitempty"`
+	Data   *GetCourierLocationData `json:"data,omitempty"`
+}
+type GetCourierLocationData struct {
+	Lat float32 `json:"lat"`
+	Lon float32 `json:"lon"`
+}
+
+// GetCourierLocation Локация курьера
+//
+//	@Summary      Локация курьера
+//	@Description  Локация курьера
+//	@Tags         orders
+//	@Accept       application/json
+//	@Produce      application/json
+//	@Param        request body GetCourierLocationRequest true "тело запроса"
+//	@Success      200  {object} GetCourierLocationResponse
+//	@Failure      400  {object} GetCourierLocationResponse
+//	@Failure      401  {object} GetCourierLocationResponse
+//	@Failure      404  {object} GetCourierLocationResponse
+//	@Failure      500  {object} GetCourierLocationResponse
+//	@Router       /orders/courier-location [post]
+func (c *controller) GetCourierLocation(w http.ResponseWriter, r *http.Request) {
+	log := slog.With("method", "GetCourierLocation")
+
+	res := &GetCourierLocationResponse{
+		Errors: make(map[string]string),
+	}
+
+	var req GetCourierLocationRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		log.ErrorContext(r.Context(), "failed decode request", "error", err)
+		res.Errors["message"] = "Ошибка обработки запроса"
+		res.Errors["error"] = err.Error()
+		responder.Responder(w, res, http.StatusBadRequest)
+		return
+	}
+
+	userID, err := utils.GetFromCtx(r.Context())
+	if err != nil {
+		log.ErrorContext(r.Context(), "failed get user id from context", "error", err)
+		res.Errors["message"] = "В контексте отсутствует идентификатор пользователя"
+		res.Errors["error"] = err.Error()
+		responder.Responder(w, res, http.StatusBadRequest)
+		return
+	}
+	user, err := c.usersService.GetByID(r.Context(), userID)
+	if err != nil {
+		log.ErrorContext(r.Context(), "failed get user", "error", err)
+		res.Errors["message"] = "Ошибка выборки пользователя"
+		res.Errors["error"] = err.Error()
+		responder.Responder(w, res, http.StatusInternalServerError)
+		return
+	}
+
+	if !user.OrganizationID.Valid {
+		res.Errors["message"] = "Пользователь не привязан к организации"
+		responder.Responder(w, res, http.StatusInternalServerError)
+		return
+	}
+
+	params := GetCourierLocation{
+		OrderID:        req.OrderID,
+		OrganizationID: user.OrganizationID.Int64,
+	}
+	location, err := c.ordersService.GetCourierLocation(r.Context(), params)
+	if err != nil {
+		log.ErrorContext(r.Context(), "failed get order", "error", err)
+		res.Errors["message"] = "Ошибка выборки заказа"
+		res.Errors["error"] = err.Error()
+		responder.Responder(w, res, http.StatusInternalServerError)
+		return
+	}
+
+	res.Data = &GetCourierLocationData{
+		Lat: location.Lat,
+		Lon: location.Lon,
+	}
+
+	responder.Responder(w, res, http.StatusOK)
+}

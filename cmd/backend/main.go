@@ -73,7 +73,7 @@ func main() {
 		}
 	}()
 
-	telegramBot, err := telegram.NewTelegram(cfg.TelegramBot, usersService, ordersService)
+	telegramBot, err := telegram.NewTelegram(cfg.TelegramBot, usersService, ordersService, redisClient)
 	if err != nil {
 		slog.Error("failed to initialize telegram bot", "error", err)
 		os.Exit(1)

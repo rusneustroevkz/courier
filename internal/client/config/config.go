@@ -1,6 +1,7 @@
 package config
 
 import (
+	"github.com/rusneustroevkz/courier/pkg/redis"
 	"log/slog"
 	"os"
 
@@ -24,6 +25,7 @@ type Config struct {
 	JWTAccessTokenSecret  string             `yaml:"jwt_access_token_secret"`
 	JWTRefreshTokenSecret string             `yaml:"jwt_refresh_token_secret"`
 	Middleware            middlewares.Config `yaml:"middleware"`
+	Redis                 redis.Config       `yaml:"redis"`
 }
 
 func New() (*Config, error) {

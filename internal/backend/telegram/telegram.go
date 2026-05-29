@@ -8,6 +8,7 @@ import (
 
 	"github.com/rusneustroevkz/courier/internal/backend/orders"
 	"github.com/rusneustroevkz/courier/internal/backend/users"
+	"github.com/rusneustroevkz/courier/pkg/redis"
 	"gopkg.in/telebot.v4"
 )
 
@@ -20,9 +21,10 @@ type Telegram struct {
 	bot           *telebot.Bot
 	usersService  users.Service
 	ordersService orders.Service
+	redisClient   *redis.Redis
 }
 
-func NewTelegram(cfg Config, usersService users.Service, ordersService orders.Service) (*Telegram, error) {
+func NewTelegram(cfg Config, usersService users.Service, ordersService orders.Service, redisClient *redis.Redis) (*Telegram, error) {
 	pref := telebot.Settings{
 		Token:     cfg.Token,
 		Poller:    &telebot.LongPoller{Timeout: time.Duration(cfg.Timeout) * time.Second},
@@ -46,6 +48,7 @@ func NewTelegram(cfg Config, usersService users.Service, ordersService orders.Se
 		bot:           bot,
 		usersService:  usersService,
 		ordersService: ordersService,
+		redisClient:   redisClient,
 	}
 
 	bot.Handle(CommandStart, t.CommandStart)
