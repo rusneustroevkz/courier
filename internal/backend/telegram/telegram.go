@@ -2,6 +2,7 @@ package telegram
 
 import (
 	"context"
+	"github.com/pkg/errors"
 	"log/slog"
 	"strings"
 	"time"
@@ -60,6 +61,14 @@ func NewTelegram(cfg Config, usersService users.Service, ordersService orders.Se
 	slog.Info("telegram bot started", "name", bot.Me.Username)
 
 	return t, nil
+}
+
+func (t *Telegram) Send(ct telebot.Context, what interface{}, opts ...interface{}) error {
+	err := ct.Edit(what, opts...)
+	if err != nil && !errors.Is(err, telebot.ErrBadContext) {
+		return err
+	}
+	return ct.Send(what, opts...)
 }
 
 func (t *Telegram) OnCallback(ct telebot.Context) error {

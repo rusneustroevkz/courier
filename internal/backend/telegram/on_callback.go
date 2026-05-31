@@ -32,7 +32,7 @@ func (t *Telegram) CallbackShareContact(parts []string, ctx context.Context, ct 
 
 	contactMenu.Reply(contactMenu.Row(btnContact))
 
-	return ct.Send("Поделитесь с номером телефона", contactMenu)
+	return t.Send(ct, "Поделитесь с номером телефона", contactMenu)
 }
 
 func (t *Telegram) CallbackShareLocation(parts []string, ctx context.Context, ct telebot.Context) error {
@@ -43,7 +43,7 @@ func (t *Telegram) CallbackShareLocation(parts []string, ctx context.Context, ct
 		"2. Выберите пункт *'Геопозиция'* (Location).\n" +
 		"3. Нажмите *'Транслировать мою геопозицию'* (Share My Live Location) и выберите время (например, 8 часов)."
 
-	return ct.Send(instruction, telebot.ModeMarkdown)
+	return t.Send(ct, instruction, telebot.ModeMarkdown)
 }
 
 func (t *Telegram) CallbackOnWork(parts []string, ctx context.Context, ct telebot.Context) error {
@@ -73,7 +73,7 @@ func (t *Telegram) CallbackOnWork(parts []string, ctx context.Context, ct telebo
 	}
 
 	if !user.IsShareLocation {
-		return ct.Send("Для начала смены поделитесь геопозицией", t.Menu(ct))
+		return ct.Edit("Для начала смены поделитесь геопозицией", t.Menu(ct))
 	}
 
 	targetState := !user.OnWork
@@ -100,7 +100,7 @@ func (t *Telegram) CallbackOnWork(parts []string, ctx context.Context, ct telebo
 
 	// Если пользователь закрыл смену, не нужно показывать ему доступные заказы
 	if !targetState {
-		return ct.Send(fmt.Sprintf("Смена %s", successText), t.Menu(ct))
+		return t.Send(ct, fmt.Sprintf("Смена %s", successText), t.Menu(ct))
 	}
 
 	// 3. Обработка заказов при открытии смены
@@ -132,7 +132,7 @@ func (t *Telegram) CallbackOnWork(parts []string, ctx context.Context, ct telebo
 		}
 	}
 
-	return ct.Send(fmt.Sprintf("Смена %s", successText), t.Menu(ct))
+	return ct.Respond()
 }
 
 func (t *Telegram) CallbackAcceptOrder(parts []string, ctx context.Context, ct telebot.Context) error {
@@ -167,5 +167,5 @@ func (t *Telegram) CallbackAcceptOrder(parts []string, ctx context.Context, ct t
 		return ct.Send("Ошибка принятия заказа", t.Menu(ct))
 	}
 
-	return ct.Send("Заказ принят", t.Menu(ct))
+	return t.Send(ct, "Заказ принят", t.Menu(ct))
 }

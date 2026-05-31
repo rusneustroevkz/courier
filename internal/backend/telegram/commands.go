@@ -3,12 +3,13 @@ package telegram
 import (
 	"context"
 	"database/sql"
-	"github.com/pkg/errors"
-	"github.com/rusneustroevkz/courier/internal/backend/users"
-	"gopkg.in/telebot.v4"
 	"log/slog"
 	"strconv"
 	"strings"
+
+	"github.com/pkg/errors"
+	"github.com/rusneustroevkz/courier/internal/backend/users"
+	"gopkg.in/telebot.v4"
 )
 
 const (
@@ -77,5 +78,5 @@ func (t *Telegram) CommandStart(ct telebot.Context) error {
 	}
 	what.WriteString("</blockquote>")
 
-	return ct.Send(what.String(), t.Menu(ct))
+	return t.Send(ct, what.String(), t.Menu(ct))
 }
