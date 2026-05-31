@@ -24,7 +24,7 @@ func (t *Telegram) OnLocation(ct telebot.Context) error {
 	if msg.Location.LivePeriod > 0 {
 		expiresTime := time.Now().Add(time.Duration(msg.Location.LivePeriod) * time.Second)
 		params := users.SetShareLocation{
-			UserID:          ct.Sender().ID,
+			TgUserID:        ct.Sender().ID,
 			IsShareLocation: true,
 			LivePeriod:      expiresTime,
 		}
@@ -50,7 +50,7 @@ func (t *Telegram) OnEditedLocation(ct telebot.Context) error {
 
 	if msg.Location.Heading == 0 {
 		params := users.SetShareLocation{
-			UserID:          ct.Sender().ID,
+			TgUserID:        ct.Sender().ID,
 			IsShareLocation: false,
 			LivePeriod:      time.Now().Add(-1),
 		}

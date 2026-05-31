@@ -3,6 +3,7 @@ package telegram
 import (
 	"context"
 	"log/slog"
+	"time"
 
 	"gopkg.in/telebot.v4"
 )
@@ -35,13 +36,22 @@ func NewTelegram(cfg Config) (*Telegram, error) {
 	return t, nil
 }
 
-func (t *Telegram) Send(ctx context.Context, userID int64, msg string) error {
+func (t *Telegram) Send(ctx context.Context, userID int64, msg string, opts ...interface{}) error {
 	chat := &telebot.Chat{ID: userID}
-	_, err := t.bot.Send(chat, msg)
+
+	tgMsg, err := t.bot.Send(chat, msg, opts...)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to send message", "error", err)
 		return err
 	}
+
+	time.AfterFunc(time.Minute*1, func() {
+		err = t.bot.Delete(tgMsg)
+		if err != nil {
+			slog.ErrorContext(ctx, "failed to delete message", "error", err)
+		}
+	})
+
 	return nil
 }
 

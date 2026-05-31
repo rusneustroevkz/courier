@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"strconv"
 	"time"
 
@@ -12,8 +13,12 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 	redislib "github.com/redis/go-redis/v9"
+	backendTelegram "github.com/rusneustroevkz/courier/internal/backend/telegram"
 	"github.com/rusneustroevkz/courier/internal/client/organizations_branches"
+	"github.com/rusneustroevkz/courier/internal/client/telegram"
+	"github.com/rusneustroevkz/courier/internal/client/users"
 	"github.com/rusneustroevkz/courier/pkg/redis"
+	"gopkg.in/telebot.v4"
 )
 
 type Service interface {
@@ -28,6 +33,8 @@ type service struct {
 	ordersRepository Querier
 	branchesRepo     organizations_branches.Querier
 	redisClient      *redis.Redis
+	telegramBot      *telegram.Telegram
+	usersRepo        users.Querier
 }
 
 func NewService(
@@ -35,12 +42,16 @@ func NewService(
 	ordersRepository Querier,
 	branchesRepo organizations_branches.Querier,
 	redisClient *redis.Redis,
+	telegramBot *telegram.Telegram,
+	usersRepo users.Querier,
 ) Service {
 	return &service{
 		db:               db,
 		ordersRepository: ordersRepository,
 		branchesRepo:     branchesRepo,
 		redisClient:      redisClient,
+		telegramBot:      telegramBot,
+		usersRepo:        usersRepo,
 	}
 }
 
@@ -87,7 +98,41 @@ func (s *service) Create(ctx context.Context, args Create) (int64, error) {
 		},
 	}
 
-	return s.ordersRepository.CreateOrder(ctx, params)
+	id, err := s.ordersRepository.CreateOrder(ctx, params)
+	if err != nil {
+		return 0, err
+	}
+	idString := strconv.FormatInt(id, 10)
+
+	couriersOnWork, err := s.usersRepo.ListOnWorkCourier(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	text := fmt.Sprintf("Новый заказ\n\nОт: %s\nДо: %s", branch.Address, args.ToAddress)
+
+	if args.Description != "" {
+		text += "\nОписание: " + args.Description
+	}
+
+	selector := &telebot.ReplyMarkup{}
+	rows := []telebot.Row{
+		{selector.Data("Принять", backendTelegram.CallbackAcceptOrder, idString)},
+	}
+
+	selector.Inline(rows...)
+
+	for _, val := range couriersOnWork {
+		if !val.TgID.Valid {
+			slog.ErrorContext(ctx, "invalid tg id to send message on create order")
+			continue
+		}
+		if err := s.telegramBot.Send(ctx, val.TgID.Int64, text, selector); err != nil {
+			slog.ErrorContext(ctx, "failed to send telegram msg on create order", "err", err, "user_id", val.TgID.Int64)
+		}
+	}
+
+	return id, nil
 }
 
 type GetByID struct {

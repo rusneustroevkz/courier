@@ -4,11 +4,13 @@ import (
 	"context"
 	"database/sql"
 	"github.com/pkg/errors"
+	"github.com/rusneustroevkz/courier/internal/backend/orders"
 	"github.com/rusneustroevkz/courier/internal/backend/users"
 	"gopkg.in/telebot.v4"
 	"log/slog"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const (
@@ -47,10 +49,27 @@ func (t *Telegram) CommandStart(ct telebot.Context) error {
 		}
 	}
 
-	order, err := t.ordersService.GetActiveOrder(ctx, sender.ID)
-	if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		log.ErrorContext(ctx, "failed to get active order", "error", err)
-		return t.Send(ct, "Ошибка выборки активного заказа")
+	if ct.Message().Location == nil {
+		params := users.SetShareLocation{
+			TgUserID:        ct.Sender().ID,
+			IsShareLocation: false,
+			LivePeriod:      time.Now().Add(-1),
+			OnWork:          false,
+		}
+		if err = t.usersService.SetShareLocation(ctx, params); err != nil {
+			log.ErrorContext(ctx, "failed to set active order", "error", err)
+		}
+		user.IsShareLocation = false
+		user.OnWork = false
+	}
+
+	var order *orders.GetByIDResult
+	if user.OnWork && user.IsShareLocation {
+		order, err = t.ordersService.GetActiveOrder(ctx, sender.ID)
+		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+			log.ErrorContext(ctx, "failed to get active order", "error", err)
+			return t.Send(ct, "Ошибка выборки активного заказа")
+		}
 	}
 
 	hasActiveOrder := order != nil && order.ID > 0

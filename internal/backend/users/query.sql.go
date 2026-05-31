@@ -128,18 +128,24 @@ func (q *Queries) SetOnWork(ctx context.Context, arg SetOnWorkParams) error {
 
 const setShareLocation = `-- name: SetShareLocation :exec
 update users
-set is_share_location = $1, share_location_ttl = $2
-where tg_id = $3
+set is_share_location = $1, share_location_ttl = $2, on_work = $3
+where tg_id = $4
 `
 
 type SetShareLocationParams struct {
 	IsShareLocation  bool          `db:"is_share_location"`
 	ShareLocationTtl sql.NullTime  `db:"share_location_ttl"`
+	OnWork           bool          `db:"on_work"`
 	TgID             sql.NullInt64 `db:"tg_id"`
 }
 
 func (q *Queries) SetShareLocation(ctx context.Context, arg SetShareLocationParams) error {
-	_, err := q.db.ExecContext(ctx, setShareLocation, arg.IsShareLocation, arg.ShareLocationTtl, arg.TgID)
+	_, err := q.db.ExecContext(ctx, setShareLocation,
+		arg.IsShareLocation,
+		arg.ShareLocationTtl,
+		arg.OnWork,
+		arg.TgID,
+	)
 	return err
 }
 

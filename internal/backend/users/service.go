@@ -133,22 +133,24 @@ func (s *service) SetOnWork(ctx context.Context, args SetOnWork) error {
 }
 
 type SetShareLocation struct {
-	UserID          int64
+	TgUserID        int64
 	IsShareLocation bool
 	LivePeriod      time.Time
+	OnWork          bool
 }
 
 func (s *service) SetShareLocation(ctx context.Context, args SetShareLocation) error {
 	params := SetShareLocationParams{
 		IsShareLocation: args.IsShareLocation,
 		TgID: sql.NullInt64{
-			Int64: args.UserID,
-			Valid: args.UserID > 0,
+			Int64: args.TgUserID,
+			Valid: args.TgUserID > 0,
 		},
 		ShareLocationTtl: sql.NullTime{
 			Time:  args.LivePeriod,
 			Valid: !args.LivePeriod.IsZero(),
 		},
+		OnWork: args.OnWork,
 	}
 	return s.usersRepository.SetShareLocation(ctx, params)
 }

@@ -19,8 +19,8 @@ where tg_id = $2;
 
 -- name: SetShareLocation :exec
 update users
-set is_share_location = $1, share_location_ttl = $2
-where tg_id = $3;
+set is_share_location = $1, share_location_ttl = $2, on_work = $3
+where tg_id = $4;
 
 -- name: ExpiredShareLocationList :many
 select *

@@ -91,6 +91,18 @@ func (t *Telegram) OnCallback(ct telebot.Context) error {
 
 	parts := strings.Split(ct.Callback().Data, "\f")
 
+	if ct.Message().Location == nil {
+		params := users.SetShareLocation{
+			TgUserID:        ct.Sender().ID,
+			IsShareLocation: false,
+			LivePeriod:      time.Now().Add(-1),
+			OnWork:          false,
+		}
+		if err := t.usersService.SetShareLocation(ctx, params); err != nil {
+			slog.ErrorContext(ctx, "failed to set active order", "error", err)
+		}
+	}
+
 	if len(parts) > 1 && strings.HasPrefix(parts[1], CallbackShareContact) {
 		return t.CallbackShareContact(parts, ctx, ct)
 	}

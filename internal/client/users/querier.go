@@ -13,6 +13,7 @@ type Querier interface {
 	CreateByEmail(ctx context.Context, arg CreateByEmailParams) error
 	GetByEmail(ctx context.Context, email sql.NullString) (*User, error)
 	GetByID(ctx context.Context, id int64) (*User, error)
+	ListOnWorkCourier(ctx context.Context) ([]*User, error)
 }
 
 var _ Querier = (*Queries)(nil)

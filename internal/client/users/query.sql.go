@@ -91,3 +91,49 @@ func (q *Queries) GetByID(ctx context.Context, id int64) (*User, error) {
 	)
 	return &i, err
 }
+
+const listOnWorkCourier = `-- name: ListOnWorkCourier :many
+select id, tg_id, full_name, email, phone, role, on_work, verified, rating, balance, created_at, updated_at, password_hash, organization_id, is_share_location, share_location_ttl
+from users
+where on_work = true
+`
+
+func (q *Queries) ListOnWorkCourier(ctx context.Context) ([]*User, error) {
+	rows, err := q.db.QueryContext(ctx, listOnWorkCourier)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []*User
+	for rows.Next() {
+		var i User
+		if err := rows.Scan(
+			&i.ID,
+			&i.TgID,
+			&i.FullName,
+			&i.Email,
+			&i.Phone,
+			&i.Role,
+			&i.OnWork,
+			&i.Verified,
+			&i.Rating,
+			&i.Balance,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.PasswordHash,
+			&i.OrganizationID,
+			&i.IsShareLocation,
+			&i.ShareLocationTtl,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
