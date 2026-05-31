@@ -1138,6 +1138,12 @@ const docTemplate = `{
                 "courier_id": {
                     "type": "integer"
                 },
+                "courier_lat": {
+                    "type": "number"
+                },
+                "courier_lon": {
+                    "type": "number"
+                },
                 "created_at": {
                     "type": "string"
                 },

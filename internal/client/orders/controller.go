@@ -144,6 +144,8 @@ type GetByIDData struct {
 	TgLiveMessageID int64     `json:"tg_live_message_id"`
 	CreatedAt       time.Time `json:"created_at"`
 	UpdatedAt       time.Time `json:"updated_at"`
+	CourierLat      float32   `json:"courier_lat,omitempty"`
+	CourierLon      float32   `json:"courier_lon,omitempty"`
 }
 
 // GetByID Выборка заказа
@@ -212,8 +214,10 @@ func (c *controller) GetByID(w http.ResponseWriter, r *http.Request) {
 
 	res.Data = &GetByIDData{
 		ID:             order.ID,
+		Description:    order.Description,
 		OrganizationID: order.OrganizationID,
-		Status:         string(order.Status),
+		CourierID:      order.CourierID,
+		Status:         order.Status,
 		FromAddress:    order.FromAddress,
 		FromLat:        order.FromLat,
 		FromLon:        order.FromLon,
@@ -222,13 +226,8 @@ func (c *controller) GetByID(w http.ResponseWriter, r *http.Request) {
 		ToLon:          order.ToLon,
 		CreatedAt:      order.CreatedAt,
 		UpdatedAt:      order.UpdatedAt,
-	}
-
-	if order.Description.Valid {
-		res.Data.Description = order.Description.String
-	}
-	if order.CourierID.Valid {
-		res.Data.CourierID = order.CourierID.Int64
+		CourierLat:     order.CourierLat,
+		CourierLon:     order.CourierLon,
 	}
 
 	responder.Responder(w, res, http.StatusOK)

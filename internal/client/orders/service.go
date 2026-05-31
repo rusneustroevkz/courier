@@ -4,7 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
@@ -16,7 +18,7 @@ import (
 
 type Service interface {
 	Create(ctx context.Context, order Create) (int64, error)
-	GetByID(ctx context.Context, args GetByID) (*Order, error)
+	GetByID(ctx context.Context, args GetByID) (*GetByIDResult, error)
 	GetAll(ctx context.Context, filter GetAll) (*GetAllResult, error)
 	GetCourierLocation(ctx context.Context, args GetCourierLocation) (*GetCourierLocationResult, error)
 }
@@ -92,13 +94,109 @@ type GetByID struct {
 	ID             int64
 	OrganizationID int64
 }
+type GetByIDResult struct {
+	ID                     int64
+	Description            string
+	OrganizationID         int64
+	Status                 string
+	FromAddress            string
+	FromLat                string
+	FromLon                string
+	ToAddress              string
+	ToLat                  string
+	ToLon                  string
+	CreatedAt              time.Time
+	UpdatedAt              time.Time
+	BranchID               int64
+	CourierEarnings        string
+	DeliveryDistanceMeters int32
+	TgCourierChatID        int64
+	AcceptedAt             time.Time
+	PickedUpAt             time.Time
+	DeliveredAt            time.Time
+	CancelledAt            time.Time
+	CourierID              int64
+	CourierLat             float32
+	CourierLon             float32
+}
 
-func (s *service) GetByID(ctx context.Context, args GetByID) (*Order, error) {
+func (s *service) GetByID(ctx context.Context, args GetByID) (*GetByIDResult, error) {
 	params := GetByIDParams{
 		ID:             args.ID,
 		OrganizationID: args.OrganizationID,
 	}
-	return s.ordersRepository.GetByID(ctx, params)
+
+	order, err := s.ordersRepository.GetByID(ctx, params)
+	if err != nil {
+		return nil, err
+	}
+
+	result := GetByIDResult{
+		ID:                     order.ID,
+		OrganizationID:         order.OrganizationID,
+		Status:                 string(order.Status),
+		FromAddress:            order.FromAddress,
+		FromLat:                order.FromLat,
+		FromLon:                order.FromLon,
+		ToAddress:              order.ToAddress,
+		ToLat:                  order.ToLat,
+		ToLon:                  order.ToLon,
+		CreatedAt:              order.CreatedAt,
+		UpdatedAt:              order.UpdatedAt,
+		CourierEarnings:        order.CourierEarnings,
+		DeliveryDistanceMeters: order.DeliveryDistanceMeters,
+	}
+
+	if order.Description.Valid {
+		result.Description = order.Description.String
+	}
+	if order.BranchID.Valid {
+		result.BranchID = order.BranchID.Int64
+	}
+	if order.TgCourierChatID.Valid {
+		result.TgCourierChatID = order.TgCourierChatID.Int64
+	}
+	if order.AcceptedAt.Valid {
+		result.AcceptedAt = order.AcceptedAt.Time
+	}
+	if order.PickedUpAt.Valid {
+		result.PickedUpAt = order.PickedUpAt.Time
+	}
+	if order.DeliveredAt.Valid {
+		result.DeliveredAt = order.DeliveredAt.Time
+	}
+	if order.CancelledAt.Valid {
+		result.CancelledAt = order.CancelledAt.Time
+	}
+
+	var courierIDString string
+
+	if order.CourierID.Valid {
+		result.CourierID = order.CourierID.Int64
+		courierIDString = fmt.Sprintf("%d", order.CourierID.Int64)
+	}
+
+	orderIsActive := order.Status == OrderStatusAccepted || order.Status == OrderStatusPickedUp
+	if courierIDString != "" && orderIsActive {
+		val, err := s.redisClient.Client.Get(ctx, "location_"+courierIDString).Result()
+		if errors.Is(err, redislib.Nil) {
+			return nil, errors.New("Ключ не существует или срок его действия истек")
+		} else if err != nil {
+			return nil, errors.New("Ошибка при получении данных: " + err.Error())
+		}
+
+		var courierLocation redis.UserLocation
+
+		err = json.Unmarshal([]byte(val), &courierLocation)
+		if err != nil {
+			return nil, errors.New("Ошибка декодирования данных: " + err.Error())
+		}
+
+		result.CourierLat = courierLocation.Latitude
+		result.CourierLon = courierLocation.Longitude
+	}
+
+	return &result, nil
 }
 
 type GetAll struct {
