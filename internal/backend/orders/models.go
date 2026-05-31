@@ -60,7 +60,6 @@ type Order struct {
 	ID                     int64          `db:"id"`
 	Description            sql.NullString `db:"description"`
 	OrganizationID         int64          `db:"organization_id"`
-	CourierID              sql.NullInt64  `db:"courier_id"`
 	Status                 OrderStatus    `db:"status"`
 	FromAddress            string         `db:"from_address"`
 	FromLat                string         `db:"from_lat"`
@@ -78,4 +77,5 @@ type Order struct {
 	PickedUpAt             sql.NullTime   `db:"picked_up_at"`
 	DeliveredAt            sql.NullTime   `db:"delivered_at"`
 	CancelledAt            sql.NullTime   `db:"cancelled_at"`
+	CourierID              sql.NullInt64  `db:"courier_id"`
 }

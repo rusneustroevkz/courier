@@ -10,6 +10,8 @@ type Service interface {
 	GetByID(ctx context.Context, orderID int64) (*GetByIDResult, error)
 	GetPendingOrders(ctx context.Context) ([]GetByIDResult, error)
 	AcceptOrder(ctx context.Context, args AcceptOrder) error
+	GetActiveOrder(ctx context.Context, userID int64) (*GetByIDResult, error)
+	DoneOrder(ctx context.Context, orderID int64) error
 }
 
 type service struct {
@@ -170,4 +172,61 @@ func (s *service) AcceptOrder(ctx context.Context, args AcceptOrder) error {
 	}
 
 	return s.ordersRepository.AcceptOrder(ctx, acceptOrderParams)
+}
+
+func (s *service) GetActiveOrder(ctx context.Context, userID int64) (*GetByIDResult, error) {
+	getByIDResult, err := s.ordersRepository.GetCourierActiveOrder(ctx, sql.NullInt64{
+		Int64: userID,
+		Valid: userID != 0,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	result := GetByIDResult{
+		ID:                     getByIDResult.ID,
+		OrganizationID:         getByIDResult.OrganizationID,
+		Status:                 getByIDResult.Status,
+		FromAddress:            getByIDResult.FromAddress,
+		FromLat:                getByIDResult.FromLat,
+		FromLon:                getByIDResult.FromLon,
+		ToAddress:              getByIDResult.ToAddress,
+		ToLat:                  getByIDResult.ToLat,
+		ToLon:                  getByIDResult.ToLon,
+		CreatedAt:              getByIDResult.CreatedAt,
+		UpdatedAt:              getByIDResult.UpdatedAt,
+		CourierEarnings:        getByIDResult.CourierEarnings,
+		DeliveryDistanceMeters: getByIDResult.DeliveryDistanceMeters,
+	}
+
+	if getByIDResult.Description.Valid {
+		result.Description = getByIDResult.Description.String
+	}
+	if getByIDResult.CourierID.Valid {
+		result.CourierID = getByIDResult.CourierID.Int64
+	}
+	if getByIDResult.BranchID.Valid {
+		result.BranchID = getByIDResult.BranchID.Int64
+	}
+	if getByIDResult.TgCourierChatID.Valid {
+		result.TgCourierChatID = getByIDResult.TgCourierChatID.Int64
+	}
+	if getByIDResult.AcceptedAt.Valid {
+		result.AcceptedAt = getByIDResult.AcceptedAt.Time
+	}
+	if getByIDResult.PickedUpAt.Valid {
+		result.PickedUpAt = getByIDResult.PickedUpAt.Time
+	}
+	if getByIDResult.DeliveredAt.Valid {
+		result.DeliveredAt = getByIDResult.DeliveredAt.Time
+	}
+	if getByIDResult.CancelledAt.Valid {
+		result.CancelledAt = getByIDResult.CancelledAt.Time
+	}
+
+	return &result, nil
+}
+
+func (s *service) DoneOrder(ctx context.Context, orderID int64) error {
+	return s.ordersRepository.DoneOrder(ctx, orderID)
 }

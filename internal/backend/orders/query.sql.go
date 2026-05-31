@@ -33,8 +33,19 @@ func (q *Queries) AcceptOrder(ctx context.Context, arg AcceptOrderParams) error 
 	return err
 }
 
+const doneOrder = `-- name: DoneOrder :exec
+update orders
+set status = 'delivered'
+where id = $1
+`
+
+func (q *Queries) DoneOrder(ctx context.Context, id int64) error {
+	_, err := q.db.ExecContext(ctx, doneOrder, id)
+	return err
+}
+
 const getByID = `-- name: GetByID :one
-select id, description, organization_id, courier_id, status, from_address, from_lat, from_lon, to_address, to_lat, to_lon, created_at, updated_at, branch_id, courier_earnings, delivery_distance_meters, tg_courier_chat_id, accepted_at, picked_up_at, delivered_at, cancelled_at
+select id, description, organization_id, status, from_address, from_lat, from_lon, to_address, to_lat, to_lon, created_at, updated_at, branch_id, courier_earnings, delivery_distance_meters, tg_courier_chat_id, accepted_at, picked_up_at, delivered_at, cancelled_at, courier_id
 from orders
 where id = $1
 `
@@ -46,7 +57,6 @@ func (q *Queries) GetByID(ctx context.Context, id int64) (*Order, error) {
 		&i.ID,
 		&i.Description,
 		&i.OrganizationID,
-		&i.CourierID,
 		&i.Status,
 		&i.FromAddress,
 		&i.FromLat,
@@ -64,12 +74,49 @@ func (q *Queries) GetByID(ctx context.Context, id int64) (*Order, error) {
 		&i.PickedUpAt,
 		&i.DeliveredAt,
 		&i.CancelledAt,
+		&i.CourierID,
+	)
+	return &i, err
+}
+
+const getCourierActiveOrder = `-- name: GetCourierActiveOrder :one
+select id, description, organization_id, status, from_address, from_lat, from_lon, to_address, to_lat, to_lon, created_at, updated_at, branch_id, courier_earnings, delivery_distance_meters, tg_courier_chat_id, accepted_at, picked_up_at, delivered_at, cancelled_at, courier_id
+from orders
+where courier_id = $1 and status not in ('created','delivered','cancelled')
+limit 1
+`
+
+func (q *Queries) GetCourierActiveOrder(ctx context.Context, courierID sql.NullInt64) (*Order, error) {
+	row := q.db.QueryRowContext(ctx, getCourierActiveOrder, courierID)
+	var i Order
+	err := row.Scan(
+		&i.ID,
+		&i.Description,
+		&i.OrganizationID,
+		&i.Status,
+		&i.FromAddress,
+		&i.FromLat,
+		&i.FromLon,
+		&i.ToAddress,
+		&i.ToLat,
+		&i.ToLon,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.BranchID,
+		&i.CourierEarnings,
+		&i.DeliveryDistanceMeters,
+		&i.TgCourierChatID,
+		&i.AcceptedAt,
+		&i.PickedUpAt,
+		&i.DeliveredAt,
+		&i.CancelledAt,
+		&i.CourierID,
 	)
 	return &i, err
 }
 
 const getPendingOrders = `-- name: GetPendingOrders :many
-select id, description, organization_id, courier_id, status, from_address, from_lat, from_lon, to_address, to_lat, to_lon, created_at, updated_at, branch_id, courier_earnings, delivery_distance_meters, tg_courier_chat_id, accepted_at, picked_up_at, delivered_at, cancelled_at
+select id, description, organization_id, status, from_address, from_lat, from_lon, to_address, to_lat, to_lon, created_at, updated_at, branch_id, courier_earnings, delivery_distance_meters, tg_courier_chat_id, accepted_at, picked_up_at, delivered_at, cancelled_at, courier_id
 from orders
 where status = 'created'
 `
@@ -87,7 +134,6 @@ func (q *Queries) GetPendingOrders(ctx context.Context) ([]*Order, error) {
 			&i.ID,
 			&i.Description,
 			&i.OrganizationID,
-			&i.CourierID,
 			&i.Status,
 			&i.FromAddress,
 			&i.FromLat,
@@ -105,6 +151,7 @@ func (q *Queries) GetPendingOrders(ctx context.Context) ([]*Order, error) {
 			&i.PickedUpAt,
 			&i.DeliveredAt,
 			&i.CancelledAt,
+			&i.CourierID,
 		); err != nil {
 			return nil, err
 		}

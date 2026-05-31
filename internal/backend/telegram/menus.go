@@ -4,11 +4,32 @@ import (
 	"context"
 	"gopkg.in/telebot.v4"
 	"log/slog"
+	"strconv"
 )
 
-func (t *Telegram) Menu(ct telebot.Context) *telebot.ReplyMarkup {
+type MenuConfig struct {
+	activeOrderID int64
+}
+
+type MenuOption func(*MenuConfig)
+
+func WithActiveOrder(orderID int64) MenuOption {
+	return func(c *MenuConfig) {
+		c.activeOrderID = orderID
+	}
+}
+
+func (t *Telegram) Menu(ct telebot.Context, opts ...MenuOption) *telebot.ReplyMarkup {
 	ctx := context.Background()
 	sender := ct.Sender()
+
+	config := &MenuConfig{
+		activeOrderID: 0,
+	}
+
+	for _, opt := range opts {
+		opt(config)
+	}
 
 	log := slog.With("method", "Menu")
 
@@ -30,7 +51,7 @@ func (t *Telegram) Menu(ct telebot.Context) *telebot.ReplyMarkup {
 			telebot.Btn{Text: "Поделитесь с номером телефона", Unique: CallbackShareContact},
 		})
 	}
-	if user.Phone.Valid && user.Verified {
+	if config.activeOrderID == 0 && user.Phone.Valid && user.Verified {
 		if user.OnWork {
 			rows = append(rows, telebot.Row{
 				telebot.Btn{Text: "Закончить смену", Unique: CallbackOnWork},
@@ -40,6 +61,11 @@ func (t *Telegram) Menu(ct telebot.Context) *telebot.ReplyMarkup {
 				telebot.Btn{Text: "Начать смену", Unique: CallbackOnWork},
 			})
 		}
+	}
+	if config.activeOrderID > 0 {
+		rows = append(rows, telebot.Row{
+			telebot.Btn{Text: "Завершить заказ", Unique: CallbackDoneOrder, Data: strconv.FormatInt(config.activeOrderID, 10)},
+		})
 	}
 
 	if !user.IsShareLocation {

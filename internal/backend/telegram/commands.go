@@ -3,13 +3,12 @@ package telegram
 import (
 	"context"
 	"database/sql"
-	"log/slog"
-	"strconv"
-	"strings"
-
 	"github.com/pkg/errors"
 	"github.com/rusneustroevkz/courier/internal/backend/users"
 	"gopkg.in/telebot.v4"
+	"log/slog"
+	"strconv"
+	"strings"
 )
 
 const (
@@ -17,6 +16,8 @@ const (
 )
 
 func (t *Telegram) CommandStart(ct telebot.Context) error {
+	defer ct.Delete()
+
 	ctx := context.Background()
 	log := slog.With("method", "CommandStart")
 
@@ -26,7 +27,7 @@ func (t *Telegram) CommandStart(ct telebot.Context) error {
 
 	if sender == nil {
 		log.ErrorContext(ctx, "sender is nil")
-		return ct.Send("Ошибка создания пользователя")
+		return t.Send(ct, "Ошибка создания пользователя")
 	}
 
 	user, err := t.usersService.GetByTgID(ctx, sender.ID)
@@ -38,13 +39,21 @@ func (t *Telegram) CommandStart(ct telebot.Context) error {
 			}
 			if err := t.usersService.RegisterByTgID(ctx, params); err != nil {
 				log.ErrorContext(ctx, "failed to register user", "error", err)
-				return ct.Send("Ошибка при создании пользователя")
+				return t.Send(ct, "Ошибка при создании пользователя")
 			}
 		} else {
 			log.ErrorContext(ctx, "failed to get user", "error", err)
-			return ct.Send("Ошибка при выборке пользователя")
+			return t.Send(ct, "Ошибка при выборке пользователя")
 		}
 	}
+
+	order, err := t.ordersService.GetActiveOrder(ctx, sender.ID)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		log.ErrorContext(ctx, "failed to get active order", "error", err)
+		return t.Send(ct, "Ошибка выборки активного заказа")
+	}
+
+	hasActiveOrder := order != nil && order.ID > 0
 
 	id := strconv.FormatInt(user.ID, 10)
 
@@ -78,5 +87,16 @@ func (t *Telegram) CommandStart(ct telebot.Context) error {
 	}
 	what.WriteString("</blockquote>")
 
-	return t.Send(ct, what.String(), t.Menu(ct))
+	var activeOrderID int64
+	if hasActiveOrder {
+		activeOrderID = order.ID
+
+		what.WriteString("\n\n<b>Активный заказ</b>")
+		what.WriteString("<blockquote>")
+		what.WriteString("От: " + order.FromAddress)
+		what.WriteString("\nДо: " + order.ToAddress)
+		what.WriteString("</blockquote>")
+	}
+
+	return t.Send(ct, what.String(), t.Menu(ct, WithActiveOrder(activeOrderID)))
 }

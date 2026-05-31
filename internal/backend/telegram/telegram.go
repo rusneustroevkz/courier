@@ -2,11 +2,11 @@ package telegram
 
 import (
 	"context"
-	"github.com/pkg/errors"
 	"log/slog"
 	"strings"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/rusneustroevkz/courier/internal/backend/orders"
 	"github.com/rusneustroevkz/courier/internal/backend/users"
 	"github.com/rusneustroevkz/courier/pkg/redis"
@@ -68,7 +68,21 @@ func (t *Telegram) Send(ct telebot.Context, what interface{}, opts ...interface{
 	if err != nil && !errors.Is(err, telebot.ErrBadContext) {
 		return err
 	}
-	return ct.Send(what, opts...)
+
+	msg, err := t.bot.Send(ct.Recipient(), what, opts...)
+	if err != nil {
+		slog.Error("error send message", "err", err.Error())
+		return ct.Send("Что-то пошло нет так, попробуйте позже")
+	}
+
+	time.AfterFunc(time.Minute*2, func() {
+		err = t.bot.Delete(msg)
+		if err != nil {
+			slog.Error("error delete message", "err", err.Error())
+		}
+	})
+
+	return nil
 }
 
 func (t *Telegram) OnCallback(ct telebot.Context) error {
@@ -88,6 +102,9 @@ func (t *Telegram) OnCallback(ct telebot.Context) error {
 	}
 	if len(parts) > 1 && strings.HasPrefix(parts[1], CallbackAcceptOrder) {
 		return t.CallbackAcceptOrder(parts, ctx, ct)
+	}
+	if len(parts) > 1 && strings.HasPrefix(parts[1], CallbackDoneOrder) {
+		return t.CallbackDoneOrder(parts, ctx, ct)
 	}
 
 	return nil
