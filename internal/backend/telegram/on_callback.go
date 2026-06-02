@@ -34,7 +34,12 @@ func (t *Telegram) CallbackShareContact(parts []string, ctx context.Context, ct 
 
 	contactMenu.Reply(contactMenu.Row(btnContact))
 
-	return t.Send(ct, "Поделитесь с номером телефона", contactMenu)
+	if err := ct.Respond(); err != nil {
+		log.Error("failed to respond to callback", "error", err)
+	}
+
+	_, err := t.bot.Send(ct.Recipient(), "Пожалуйста, поделитесь номером телефона, нажав на кнопку ниже:", contactMenu)
+	return err
 }
 
 func (t *Telegram) CallbackShareLocation(parts []string, ctx context.Context, ct telebot.Context) error {

@@ -48,7 +48,7 @@ func (t *Telegram) OnEditedLocation(ct telebot.Context) error {
 		return ct.Send("Ошибка не передалась локация")
 	}
 
-	if msg.Location.Heading == 0 {
+	if msg.Location.LivePeriod <= 0 {
 		params := users.SetShareLocation{
 			TgUserID:        ct.Sender().ID,
 			IsShareLocation: false,

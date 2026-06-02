@@ -46,12 +46,12 @@ func (t *Telegram) Menu(ct telebot.Context, opts ...MenuOption) *telebot.ReplyMa
 			telebot.Btn{Text: "Ожидайте верификации", Unique: "verification_status"},
 		})
 	}
-	if !user.Phone.Valid {
+	if user.Phone == "" {
 		rows = append(rows, telebot.Row{
 			telebot.Btn{Text: "Поделитесь с номером телефона", Unique: CallbackShareContact},
 		})
 	}
-	if config.activeOrderID == 0 && user.Phone.Valid && user.Verified {
+	if config.activeOrderID == 0 && user.Phone != "" && user.Verified {
 		if user.OnWork {
 			rows = append(rows, telebot.Row{
 				telebot.Btn{Text: "Закончить смену", Unique: CallbackOnWork},

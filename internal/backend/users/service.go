@@ -8,7 +8,7 @@ import (
 )
 
 type Service interface {
-	RegisterByTgID(ctx context.Context, params RegisterByTgID) error
+	RegisterByTgID(ctx context.Context, params RegisterByTgID) (*GetByTgID, error)
 	GetByTgID(ctx context.Context, userID int64) (*GetByTgID, error)
 	UpdatePhone(ctx context.Context, params UpdatePhone) error
 	SetOnWork(ctx context.Context, args SetOnWork) error
@@ -31,7 +31,7 @@ type RegisterByTgID struct {
 	Username string
 }
 
-func (s *service) RegisterByTgID(ctx context.Context, params RegisterByTgID) error {
+func (s *service) RegisterByTgID(ctx context.Context, params RegisterByTgID) (*GetByTgID, error) {
 	createParams := CreateParams{
 		TgID: sql.NullInt64{
 			Int64: params.UserID,
@@ -44,24 +44,39 @@ func (s *service) RegisterByTgID(ctx context.Context, params RegisterByTgID) err
 		Role: RoleTypeCourier,
 	}
 
-	if err := s.usersRepository.Create(ctx, createParams); err != nil {
-		return err
+	id, err := s.usersRepository.Create(ctx, createParams)
+	if err != nil {
+		return nil, err
 	}
 
-	return nil
+	result := &GetByTgID{
+		ID:              id,
+		OnWork:          false,
+		Verified:        false,
+		CreatedAt:       time.Now(),
+		UpdatedAt:       time.Now(),
+		IsShareLocation: false,
+		Role:            string(RoleTypeCourier),
+		TgID:            params.UserID,
+		FullName:        params.Username,
+		Rating:          "5.0",
+		Balance:         "0.0",
+	}
+
+	return result, nil
 }
 
 type GetByTgID struct {
 	ID              int64
-	TgID            sql.NullInt64
-	FullName        sql.NullString
-	Email           sql.NullString
-	Phone           sql.NullString
-	Role            RoleType
+	TgID            int64
+	FullName        string
+	Email           string
+	Phone           string
+	Role            string
 	OnWork          bool
 	Verified        bool
-	Rating          sql.NullString
-	Balance         sql.NullString
+	Rating          string
+	Balance         string
 	IsShareLocation bool
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
@@ -78,18 +93,31 @@ func (s *service) GetByTgID(ctx context.Context, userID int64) (*GetByTgID, erro
 
 	result := &GetByTgID{
 		ID:              user.ID,
-		TgID:            user.TgID,
-		FullName:        user.FullName,
-		Email:           user.Email,
-		Phone:           user.Phone,
-		Role:            user.Role,
 		OnWork:          user.OnWork,
 		Verified:        user.Verified,
-		Rating:          user.Rating,
-		Balance:         user.Balance,
 		CreatedAt:       user.CreatedAt,
 		UpdatedAt:       user.UpdatedAt,
 		IsShareLocation: user.IsShareLocation,
+		Role:            string(user.Role),
+	}
+
+	if user.TgID.Valid {
+		result.TgID = user.TgID.Int64
+	}
+	if user.FullName.Valid {
+		result.FullName = user.FullName.String
+	}
+	if user.Email.Valid {
+		result.Email = user.Email.String
+	}
+	if user.Phone.Valid {
+		result.Phone = user.Phone.String
+	}
+	if user.Rating.Valid {
+		result.Rating = user.Rating.String
+	}
+	if user.Balance.Valid {
+		result.Balance = user.Balance.String
 	}
 
 	return result, nil

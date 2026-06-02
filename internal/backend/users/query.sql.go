@@ -10,9 +10,10 @@ import (
 	"database/sql"
 )
 
-const create = `-- name: Create :exec
+const create = `-- name: Create :one
 insert into users(tg_id, full_name, email, phone, role)
 values($1, $2, $3, $4, $5)
+returning id
 `
 
 type CreateParams struct {
@@ -23,15 +24,17 @@ type CreateParams struct {
 	Role     RoleType       `db:"role"`
 }
 
-func (q *Queries) Create(ctx context.Context, arg CreateParams) error {
-	_, err := q.db.ExecContext(ctx, create,
+func (q *Queries) Create(ctx context.Context, arg CreateParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, create,
 		arg.TgID,
 		arg.FullName,
 		arg.Email,
 		arg.Phone,
 		arg.Role,
 	)
-	return err
+	var id int64
+	err := row.Scan(&id)
+	return id, err
 }
 
 const expiredShareLocationList = `-- name: ExpiredShareLocationList :many

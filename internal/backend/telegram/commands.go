@@ -23,6 +23,12 @@ func (t *Telegram) CommandStart(ct telebot.Context) error {
 	ctx := context.Background()
 	log := slog.With("method", "CommandStart")
 
+	defer func() {
+		if r := recover(); r != nil {
+			log.ErrorContext(ctx, "panic detected", "err", r)
+		}
+	}()
+
 	_ = t.bot.Notify(ct.Recipient(), telebot.Typing)
 
 	sender := ct.Sender()
@@ -39,7 +45,8 @@ func (t *Telegram) CommandStart(ct telebot.Context) error {
 				UserID:   sender.ID,
 				Username: sender.FirstName + " " + sender.LastName,
 			}
-			if err := t.usersService.RegisterByTgID(ctx, params); err != nil {
+			user, err = t.usersService.RegisterByTgID(ctx, params)
+			if err != nil {
 				log.ErrorContext(ctx, "failed to register user", "error", err)
 				return t.Send(ct, "Ошибка при создании пользователя")
 			}
@@ -89,11 +96,11 @@ func (t *Telegram) CommandStart(ct telebot.Context) error {
 	}
 	what.WriteString("\nСмена: " + onWorkText)
 
-	if user.FullName.Valid {
-		what.WriteString("\nИмя: " + user.FullName.String)
+	if user.FullName != "" {
+		what.WriteString("\nИмя: " + user.FullName)
 	}
-	if user.Phone.Valid {
-		what.WriteString("\nНомер телефона: " + user.Phone.String)
+	if user.Phone != "" {
+		what.WriteString("\nНомер телефона: " + user.Phone)
 	}
 	what.WriteString("\nВерифицирован: ")
 	if user.Verified {
@@ -101,8 +108,8 @@ func (t *Telegram) CommandStart(ct telebot.Context) error {
 	} else {
 		what.WriteString("нет")
 	}
-	if user.Rating.Valid {
-		what.WriteString("\nРейтинг: " + user.Rating.String)
+	if user.Rating != "" {
+		what.WriteString("\nРейтинг: " + user.Rating)
 	}
 	what.WriteString("</blockquote>")
 
