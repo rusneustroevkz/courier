@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/rusneustroevkz/courier/internal/client/organizations"
-	"github.com/rusneustroevkz/courier/internal/client/telegram"
 )
 
 type Service interface {
@@ -15,14 +14,12 @@ type Service interface {
 
 type service struct {
 	usersRepository         Querier
-	telegramBot             *telegram.Telegram
 	organizationsRepository organizations.Querier
 }
 
-func NewService(usersRepository Querier, telegramBot *telegram.Telegram, organizationsRepository organizations.Querier) Service {
+func NewService(usersRepository Querier, organizationsRepository organizations.Querier) Service {
 	return &service{
 		usersRepository:         usersRepository,
-		telegramBot:             telegramBot,
 		organizationsRepository: organizationsRepository,
 	}
 }

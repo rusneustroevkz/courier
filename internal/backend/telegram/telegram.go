@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/pkg/errors"
@@ -23,6 +24,7 @@ type Telegram struct {
 	usersService  users.Service
 	ordersService orders.Service
 	redisClient   *redis.Redis
+	profilesCache sync.Map
 }
 
 func NewTelegram(cfg Config, usersService users.Service, ordersService orders.Service, redisClient *redis.Redis) (*Telegram, error) {
@@ -50,6 +52,7 @@ func NewTelegram(cfg Config, usersService users.Service, ordersService orders.Se
 		usersService:  usersService,
 		ordersService: ordersService,
 		redisClient:   redisClient,
+		profilesCache: sync.Map{},
 	}
 
 	bot.Handle(CommandStart, t.CommandStart)
@@ -63,10 +66,38 @@ func NewTelegram(cfg Config, usersService users.Service, ordersService orders.Se
 	return t, nil
 }
 
-func (t *Telegram) Send(ct telebot.Context, what interface{}, opts ...interface{}) error {
+func (t *Telegram) Send(ct telebot.Context, what string, opts ...interface{}) error {
+	err := ct.Edit(what, opts...)
+	if err != nil && !errors.Is(err, telebot.ErrBadContext) {
+		slog.Error("telegram bot editing error", "error", err)
+		return ct.Send("Что-то пошло нет так, попробуйте позже")
+	}
+
+	msg, err := t.bot.Send(ct.Recipient(), what, opts...)
+	if err != nil {
+		slog.Error("error send message", "err", err.Error())
+		return ct.Send("Что-то пошло нет так, попробуйте позже")
+	}
+
+	time.AfterFunc(time.Minute*2, func() {
+		err = t.bot.Delete(msg)
+		if err != nil {
+			slog.Error("error delete message", "err", err.Error())
+		}
+	})
+
+	return nil
+}
+
+func (t *Telegram) SendWithProfile(ct telebot.Context, what string, opts ...interface{}) error {
 	err := ct.Edit(what, opts...)
 	if err != nil && !errors.Is(err, telebot.ErrBadContext) {
 		return err
+	}
+
+	profile, ok := t.profilesCache.Load(ct.Sender().ID)
+	if ok {
+		what += "\n\n" + profile.(string)
 	}
 
 	msg, err := t.bot.Send(ct.Recipient(), what, opts...)
@@ -91,18 +122,6 @@ func (t *Telegram) OnCallback(ct telebot.Context) error {
 
 	parts := strings.Split(ct.Callback().Data, "\f")
 
-	if ct.Message().Location == nil {
-		params := users.SetShareLocation{
-			TgUserID:        ct.Sender().ID,
-			IsShareLocation: false,
-			LivePeriod:      time.Now().Add(-1),
-			OnWork:          false,
-		}
-		if err := t.usersService.SetShareLocation(ctx, params); err != nil {
-			slog.ErrorContext(ctx, "failed to set active order", "error", err)
-		}
-	}
-
 	if len(parts) > 1 && strings.HasPrefix(parts[1], CallbackShareContact) {
 		return t.CallbackShareContact(parts, ctx, ct)
 	}
@@ -117,6 +136,9 @@ func (t *Telegram) OnCallback(ct telebot.Context) error {
 	}
 	if len(parts) > 1 && strings.HasPrefix(parts[1], CallbackDoneOrder) {
 		return t.CallbackDoneOrder(parts, ctx, ct)
+	}
+	if len(parts) > 1 && strings.HasPrefix(parts[1], CallbackOrdersList) {
+		return t.CallbackOrdersList(parts, ctx, ct)
 	}
 
 	return nil

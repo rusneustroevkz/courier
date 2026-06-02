@@ -53,9 +53,10 @@ func (t *Telegram) Menu(ct telebot.Context, opts ...MenuOption) *telebot.ReplyMa
 	}
 	if config.activeOrderID == 0 && user.Phone != "" && user.Verified {
 		if user.OnWork {
-			rows = append(rows, telebot.Row{
-				telebot.Btn{Text: "Закончить смену", Unique: CallbackOnWork},
-			})
+			rows = append(rows,
+				telebot.Row{telebot.Btn{Text: "Закончить смену", Unique: CallbackOnWork}},
+				telebot.Row{telebot.Btn{Text: "Список заказов", Unique: CallbackOrdersList}},
+			)
 		} else {
 			rows = append(rows, telebot.Row{
 				telebot.Btn{Text: "Начать смену", Unique: CallbackOnWork},

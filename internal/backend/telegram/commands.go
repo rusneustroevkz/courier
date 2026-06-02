@@ -9,8 +9,6 @@ import (
 	"gopkg.in/telebot.v4"
 	"log/slog"
 	"strconv"
-	"strings"
-	"time"
 )
 
 const (
@@ -35,7 +33,7 @@ func (t *Telegram) CommandStart(ct telebot.Context) error {
 
 	if sender == nil {
 		log.ErrorContext(ctx, "sender is nil")
-		return t.Send(ct, "Ошибка создания пользователя")
+		return t.SendWithProfile(ct, "Ошибка создания пользователя")
 	}
 
 	user, err := t.usersService.GetByTgID(ctx, sender.ID)
@@ -48,26 +46,12 @@ func (t *Telegram) CommandStart(ct telebot.Context) error {
 			user, err = t.usersService.RegisterByTgID(ctx, params)
 			if err != nil {
 				log.ErrorContext(ctx, "failed to register user", "error", err)
-				return t.Send(ct, "Ошибка при создании пользователя")
+				return t.SendWithProfile(ct, "Ошибка при создании пользователя")
 			}
 		} else {
 			log.ErrorContext(ctx, "failed to get user", "error", err)
-			return t.Send(ct, "Ошибка при выборке пользователя")
+			return t.SendWithProfile(ct, "Ошибка при выборке пользователя")
 		}
-	}
-
-	if ct.Message().Location == nil {
-		params := users.SetShareLocation{
-			TgUserID:        ct.Sender().ID,
-			IsShareLocation: false,
-			LivePeriod:      time.Now().Add(-1),
-			OnWork:          false,
-		}
-		if err = t.usersService.SetShareLocation(ctx, params); err != nil {
-			log.ErrorContext(ctx, "failed to set active order", "error", err)
-		}
-		user.IsShareLocation = false
-		user.OnWork = false
 	}
 
 	var order *orders.GetByIDResult
@@ -75,54 +59,41 @@ func (t *Telegram) CommandStart(ct telebot.Context) error {
 		order, err = t.ordersService.GetActiveOrder(ctx, sender.ID)
 		if err != nil && !errors.Is(err, sql.ErrNoRows) {
 			log.ErrorContext(ctx, "failed to get active order", "error", err)
-			return t.Send(ct, "Ошибка выборки активного заказа")
+			return t.SendWithProfile(ct, "Ошибка выборки активного заказа")
 		}
 	}
 
+	var opts []MenuOption
+	params := make(profileParams)
+
 	hasActiveOrder := order != nil && order.ID > 0
-
-	id := strconv.FormatInt(user.ID, 10)
-
-	what := strings.Builder{}
-	what.WriteString("<b>Профиль</b>")
-	what.WriteString("<blockquote>")
-	what.WriteString("ID: " + id)
-
-	onWorkText := ""
-	if user.OnWork {
-		onWorkText = "на смене"
-	} else {
-		onWorkText = "отдыхает"
-	}
-	what.WriteString("\nСмена: " + onWorkText)
-
-	if user.FullName != "" {
-		what.WriteString("\nИмя: " + user.FullName)
-	}
-	if user.Phone != "" {
-		what.WriteString("\nНомер телефона: " + user.Phone)
-	}
-	what.WriteString("\nВерифицирован: ")
-	if user.Verified {
-		what.WriteString("да")
-	} else {
-		what.WriteString("нет")
-	}
-	if user.Rating != "" {
-		what.WriteString("\nРейтинг: " + user.Rating)
-	}
-	what.WriteString("</blockquote>")
-
-	var activeOrderID int64
 	if hasActiveOrder {
-		activeOrderID = order.ID
-
-		what.WriteString("\n\n<b>Активный заказ</b>")
-		what.WriteString("<blockquote>")
-		what.WriteString("От: " + order.FromAddress)
-		what.WriteString("\nДо: " + order.ToAddress)
-		what.WriteString("</blockquote>")
+		params["order_id"] = order.ID
+		params["from_address"] = order.FromAddress
+		params["to_address"] = order.ToAddress
+		opts = append(opts, WithActiveOrder(order.ID))
 	}
 
-	return t.Send(ct, what.String(), t.Menu(ct, WithActiveOrder(activeOrderID)))
+	params["id"] = strconv.FormatInt(user.ID, 10)
+	params["fullname"] = user.FullName
+	params["phone"] = user.Phone
+	params["rating"] = user.Rating
+	params["has_active_order"] = hasActiveOrder
+
+	if user.OnWork {
+		params["on_work_text"] = "на смене"
+	} else {
+		params["on_work_text"] = "отдыхает"
+	}
+	if user.Verified {
+		params["verified"] = "да"
+	} else {
+		params["verified"] = "нет"
+	}
+
+	what := t.Profile(params)
+
+	t.profilesCache.Store(ct.Sender().ID, what)
+
+	return t.Send(ct, what, t.Menu(ct, opts...))
 }

@@ -18,6 +18,7 @@ const (
 	CallbackShareLocation = "on_location"
 	CallbackAcceptOrder   = "accept_order"
 	CallbackDoneOrder     = "done_order"
+	CallbackOrdersList    = "orders_list"
 )
 
 func (t *Telegram) CallbackShareContact(parts []string, ctx context.Context, ct telebot.Context) error {
@@ -25,7 +26,7 @@ func (t *Telegram) CallbackShareContact(parts []string, ctx context.Context, ct 
 	payload := strings.Split(parts[1], "|")
 	if len(payload) < 1 {
 		log.Error("invalid callback parts")
-		return t.Send(ct, "Ошбика коллбэк с поделиться контактом", t.Menu(ct))
+		return t.SendWithProfile(ct, "Ошбика коллбэк с поделиться контактом", t.Menu(ct))
 	}
 
 	contactMenu := &telebot.ReplyMarkup{ResizeKeyboard: true, OneTimeKeyboard: true}
@@ -48,7 +49,7 @@ func (t *Telegram) CallbackShareLocation(parts []string, ctx context.Context, ct
 		"2. Выберите пункт *'Геопозиция'* (Location).\n" +
 		"3. Нажмите *'Транслировать мою геопозицию'* (Share My Live Location) и выберите время (например, 8 часов)."
 
-	return t.Send(ct, instruction, telebot.ModeMarkdown)
+	return t.SendWithProfile(ct, instruction, t.Menu(ct))
 }
 
 func (t *Telegram) CallbackOnWork(parts []string, ctx context.Context, ct telebot.Context) error {
@@ -56,29 +57,29 @@ func (t *Telegram) CallbackOnWork(parts []string, ctx context.Context, ct telebo
 
 	if len(parts) < 2 {
 		log.ErrorContext(ctx, "invalid parts length", "parts_len", len(parts))
-		return t.Send(ct, "Ошибка обработки запроса", t.Menu(ct))
+		return t.SendWithProfile(ct, "Ошибка обработки запроса", t.Menu(ct))
 	}
 
 	payload := strings.Split(parts[1], "|")
 	if len(payload) < 1 {
 		log.Error("invalid callback parts")
-		return t.Send(ct, "Ошбика коллбэк", t.Menu(ct))
+		return t.SendWithProfile(ct, "Ошбика коллбэк", t.Menu(ct))
 	}
 
 	userID := ct.Sender().ID
 	user, err := t.usersService.GetByTgID(ctx, userID)
 	if err != nil {
 		log.ErrorContext(ctx, "failed to get user by telegram id", "user_id", userID, "err", err)
-		return t.Send(ct, "Ошибка выборки пользователя, обратитесь в поддержку", t.Menu(ct))
+		return t.SendWithProfile(ct, "Ошибка выборки пользователя, обратитесь в поддержку", t.Menu(ct))
 	}
 
 	if user == nil {
 		log.ErrorContext(ctx, "user not found", "user_id", userID, "err", err)
-		return t.Send(ct, "Пользователь не найден, обратитесь в поддержку", t.Menu(ct))
+		return t.SendWithProfile(ct, "Пользователь не найден, обратитесь в поддержку", t.Menu(ct))
 	}
 
 	if !user.IsShareLocation {
-		return ct.Edit("Для начала смены поделитесь геопозицией", t.Menu(ct))
+		return t.SendWithProfile(ct, "Для начала смены поделитесь геопозицией.", t.Menu(ct))
 	}
 
 	targetState := !user.OnWork
@@ -90,7 +91,7 @@ func (t *Telegram) CallbackOnWork(parts []string, ctx context.Context, ct telebo
 	err = t.usersService.SetOnWork(ctx, params)
 	if err != nil {
 		log.ErrorContext(ctx, "failed to set on_work", "user_id", userID, "err", err, "target_state", targetState)
-		return t.Send(ct, "Ошибка смены, обратитесь в поддержку", t.Menu(ct))
+		return t.SendWithProfile(ct, "Ошибка смены, обратитесь в поддержку", t.Menu(ct))
 	}
 
 	if !targetState {
@@ -100,13 +101,13 @@ func (t *Telegram) CallbackOnWork(parts []string, ctx context.Context, ct telebo
 	list, err := t.ordersService.GetPendingOrders(ctx)
 	if err != nil {
 		log.ErrorContext(ctx, "failed to get pending orders", "user_id", userID, "err", err)
-		return t.Send(ct, "Ошибка получения списка заказов, обратитесь в поддержку", t.Menu(ct))
+		return t.SendWithProfile(ct, "Ошибка получения списка заказов, обратитесь в поддержку", t.Menu(ct))
 	}
 
 	maxOrdersToShow := 5
 	for i, item := range list {
 		if i >= maxOrdersToShow {
-			_ = t.Send(ct, "...и другие заказы доступны в меню.")
+			_ = t.SendWithProfile(ct, "...и другие заказы доступны в меню.")
 			break
 		}
 
@@ -117,7 +118,7 @@ func (t *Telegram) CallbackOnWork(parts []string, ctx context.Context, ct telebo
 
 		msgText := fmt.Sprintf("Откуда: %s\nКуда: %s", item.FromAddress, item.ToAddress)
 
-		if err = t.Send(ct, msgText, menu); err != nil {
+		if err = t.SendWithProfile(ct, msgText, menu); err != nil {
 			log.ErrorContext(ctx, "failed to send pending order", "user_id", userID, "order_id", item.ID, "err", err)
 		}
 	}
@@ -130,19 +131,19 @@ func (t *Telegram) CallbackAcceptOrder(parts []string, ctx context.Context, ct t
 
 	if len(parts) < 2 {
 		log.ErrorContext(ctx, "invalid parts length", "parts_len", len(parts))
-		return t.Send(ct, "Ошибка обработки запроса", t.Menu(ct))
+		return t.SendWithProfile(ct, "Ошибка обработки запроса", t.Menu(ct))
 	}
 
 	payload := strings.Split(parts[1], "|")
 	if len(payload) < 1 {
 		log.Error("invalid callback parts")
-		return t.Send(ct, "Ошбика коллбэк", t.Menu(ct))
+		return t.SendWithProfile(ct, "Ошбика коллбэк", t.Menu(ct))
 	}
 
 	orderID, err := strconv.ParseInt(payload[1], 10, 64)
 	if err != nil {
 		log.ErrorContext(ctx, "failed to parse order id", "order_id", parts[2], "err", err)
-		return t.Send(ct, "Ошибка обработки айди заказа", t.Menu(ct))
+		return t.SendWithProfile(ct, "Ошибка обработки айди заказа", t.Menu(ct))
 	}
 
 	userID := ct.Sender().ID
@@ -154,7 +155,7 @@ func (t *Telegram) CallbackAcceptOrder(parts []string, ctx context.Context, ct t
 	}
 	if err := t.ordersService.AcceptOrder(ctx, acceptOrderParams); err != nil {
 		log.ErrorContext(ctx, "failed accept order", "err", err)
-		return t.Send(ct, "Ошибка принятия заказа", t.Menu(ct))
+		return t.SendWithProfile(ct, "Ошибка принятия заказа", t.Menu(ct))
 	}
 
 	return t.CommandStart(ct)
@@ -165,26 +166,72 @@ func (t *Telegram) CallbackDoneOrder(parts []string, ctx context.Context, ct tel
 
 	if len(parts) < 2 {
 		log.ErrorContext(ctx, "invalid parts length", "parts_len", len(parts))
-		return t.Send(ct, "Ошибка обработки запроса", t.Menu(ct))
+		return t.SendWithProfile(ct, "Ошибка обработки запроса", t.Menu(ct))
 	}
 
 	payload := strings.Split(parts[1], "|")
 	if len(payload) < 1 {
 		log.Error("invalid callback parts")
-		return t.Send(ct, "Ошбика коллбэк", t.Menu(ct))
+		return t.SendWithProfile(ct, "Ошбика коллбэк", t.Menu(ct))
 	}
 
 	orderID, err := strconv.ParseInt(payload[1], 10, 64)
 	if err != nil {
 		log.ErrorContext(ctx, "failed to parse order id", "order_id", parts[2], "err", err)
-		return t.Send(ct, "Ошибка обработки айди заказа", t.Menu(ct))
+		return t.SendWithProfile(ct, "Ошибка обработки айди заказа", t.Menu(ct))
 	}
 
 	err = t.ordersService.DoneOrder(ctx, orderID)
 	if err != nil {
 		log.ErrorContext(ctx, "failed done order", "order_id", orderID, "err", err)
-		return t.Send(ct, "Ошибка завершении заказа", t.Menu(ct))
+		return t.SendWithProfile(ct, "Ошибка завершении заказа", t.Menu(ct))
 	}
 
 	return t.CommandStart(ct)
+}
+
+func (t *Telegram) CallbackOrdersList(parts []string, ctx context.Context, ct telebot.Context) error {
+	log := slog.With("method", "CallbackOrdersList")
+
+	if len(parts) < 2 {
+		log.ErrorContext(ctx, "invalid parts length", "parts_len", len(parts))
+		return t.SendWithProfile(ct, "Ошибка обработки запроса", t.Menu(ct))
+	}
+
+	payload := strings.Split(parts[1], "|")
+	if len(payload) < 1 {
+		log.Error("invalid callback parts")
+		return t.SendWithProfile(ct, "Ошбика коллбэк", t.Menu(ct))
+	}
+
+	list, err := t.ordersService.GetPendingOrders(ctx)
+	if err != nil {
+		log.ErrorContext(ctx, "failed to get pending orders", "user_id", ct.Sender().ID, "err", err)
+		return t.SendWithProfile(ct, "Ошибка получения списка заказов, обратитесь в поддержку", t.Menu(ct))
+	}
+
+	if len(list) == 0 {
+		return t.SendWithProfile(ct, "Пока нет заказов", t.Menu(ct))
+	}
+
+	maxOrdersToShow := 5
+	for i, item := range list {
+		if i >= maxOrdersToShow {
+			_ = t.SendWithProfile(ct, "...и другие заказы доступны в меню.")
+			break
+		}
+
+		menu := &telebot.ReplyMarkup{ResizeKeyboard: true}
+		menu.Inline(telebot.Row{
+			telebot.Btn{Text: "Принять", Unique: CallbackAcceptOrder, Data: strconv.FormatInt(item.ID, 10)},
+		})
+
+		msgText := fmt.Sprintf("Откуда: %s\nКуда: %s", item.FromAddress, item.ToAddress)
+
+		if err = t.SendWithProfile(ct, msgText, menu); err != nil {
+			log.ErrorContext(ctx, "failed to send pending order", "user_id", ct.Sender().ID, "order_id", item.ID, "err", err)
+		}
+	}
+
+	return ct.Respond()
 }

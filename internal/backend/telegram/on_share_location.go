@@ -30,13 +30,13 @@ func (t *Telegram) OnLocation(ct telebot.Context) error {
 		}
 		if err := t.usersService.SetShareLocation(ctx, params); err != nil {
 			log.ErrorContext(ctx, "failed set share location", "err", err)
-			return ct.Send("Ошибка геопозиции", t.Menu(ct))
+			return t.SendWithProfile(ct, "Ошибка геопозиции", t.Menu(ct))
 		}
 
-		return ct.Send("Отлично! Трансляция геопозиции запущена. Теперь вы можете начать смену.")
+		return t.SendWithProfile(ct, "Отлично! Трансляция геопозиции запущена. Теперь вы можете начать смену.", t.Menu(ct))
 	}
 
-	return ct.Send("Вы отправили статичную точку. Пожалуйста, отправьте именно трансляцию (Живую геопозицию).")
+	return t.SendWithProfile(ct, "Вы отправили статичную точку. Пожалуйста, отправьте именно трансляцию (Живую геопозицию).", t.Menu(ct))
 }
 
 func (t *Telegram) OnEditedLocation(ct telebot.Context) error {
@@ -45,7 +45,7 @@ func (t *Telegram) OnEditedLocation(ct telebot.Context) error {
 	msg := ct.Message()
 
 	if msg == nil || msg.Location == nil {
-		return ct.Send("Ошибка не передалась локация")
+		return t.SendWithProfile(ct, "Ошибка не передалась локация")
 	}
 
 	if msg.Location.LivePeriod <= 0 {
@@ -56,10 +56,10 @@ func (t *Telegram) OnEditedLocation(ct telebot.Context) error {
 		}
 		if err := t.usersService.SetShareLocation(ctx, params); err != nil {
 			log.ErrorContext(ctx, "failed set share location", "err", err)
-			return ct.Send("Ошибка геопозиции", t.Menu(ct))
+			return t.SendWithProfile(ct, "Ошибка геопозиции", t.Menu(ct))
 		}
 
-		return ct.Send("Трансляция геопозиции остановлена. Смена завершена.")
+		return t.SendWithProfile(ct, "Трансляция геопозиции остановлена. Смена завершена.", t.Menu(ct))
 	}
 
 	userLocation := redis.UserLocation{
@@ -73,8 +73,8 @@ func (t *Telegram) OnEditedLocation(ct telebot.Context) error {
 		return ct.Respond()
 	}
 
-	userIDString := strconv.Itoa(int(ct.Sender().ID))
-	err = t.redisClient.Client.Set(ctx, "location_"+userIDString, jsonData, redis.UserLocationTTL).Err()
+	userTgIDString := strconv.Itoa(int(ct.Sender().ID))
+	err = t.redisClient.Client.Set(ctx, "location_"+userTgIDString, jsonData, redis.UserLocationTTL).Err()
 	if err != nil {
 		log.ErrorContext(ctx, "failed set share location", "err", err)
 	}

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/rusneustroevkz/courier/internal/client/telegram"
 	"log/slog"
 	"net/http"
 	"os"
@@ -17,7 +18,6 @@ import (
 	"github.com/rusneustroevkz/courier/internal/client/organizations"
 	"github.com/rusneustroevkz/courier/internal/client/organizations_branches"
 	"github.com/rusneustroevkz/courier/internal/client/router"
-	"github.com/rusneustroevkz/courier/internal/client/telegram"
 	"github.com/rusneustroevkz/courier/internal/client/users"
 	"github.com/rusneustroevkz/courier/pkg/middlewares"
 	"github.com/rusneustroevkz/courier/pkg/postgres"
@@ -82,16 +82,13 @@ func main() {
 		slog.Error("failed to initialize telegram bot", "error", err)
 		os.Exit(1)
 	}
-	go func() {
-		telegramBot.Start()
-	}()
 
 	organizationsRepository := organizations.New(db.DB)
 
 	dadataClient := dadata.NewDadata()
 
 	usersRepository := users.New(db.DB)
-	usersService := users.NewService(usersRepository, telegramBot, organizationsRepository)
+	usersService := users.NewService(usersRepository, organizationsRepository)
 	usersController := users.NewController(usersService)
 
 	organizationsBranchesRepository := organizations_branches.New(db.DB)
@@ -150,7 +147,6 @@ func main() {
 	if err := db.Close(); err != nil {
 		slog.Error("failed to close postgres", "error", err)
 	}
-	telegramBot.Stop()
 
 	slog.Info("shutdown complete")
 }
