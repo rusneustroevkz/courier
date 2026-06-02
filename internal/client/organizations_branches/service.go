@@ -128,6 +128,9 @@ func (s *service) List(ctx context.Context, filter List) (*ListResult, error) {
 
 	var result []GetByIDResult
 
+	var latitude sql.NullFloat64
+	var longitude sql.NullFloat64
+
 	for rows.Next() {
 		var item GetByIDResult
 		if err := rows.Scan(
@@ -135,8 +138,8 @@ func (s *service) List(ctx context.Context, filter List) (*ListResult, error) {
 			&item.OrganizationID,
 			&item.Name,
 			&item.Address,
-			&item.Latitude,
-			&item.Longitude,
+			&latitude,
+			&longitude,
 			pq.Array(&item.Phone),
 			&item.IsActive,
 			&item.CreatedAt,
@@ -144,6 +147,13 @@ func (s *service) List(ctx context.Context, filter List) (*ListResult, error) {
 			&item.UserSelected,
 		); err != nil {
 			return nil, errors.Wrap(err, "failed to scan row")
+		}
+
+		if latitude.Valid {
+			item.Latitude = latitude.Float64
+		}
+		if longitude.Valid {
+			item.Longitude = longitude.Float64
 		}
 
 		result = append(result, item)
@@ -276,17 +286,19 @@ func (s *service) SetUserSelected(ctx context.Context, args SetUserSelected) (er
 	}
 	var branch *OrganizationBranch
 	branch, err = s.repo.WithTx(tx).GetCurrentSelected(ctx, getCurrentSelectedParams)
-	if err != nil {
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return err
 	}
 
-	setNullUserSelectedParams := SetNullUserSelectedParams{
-		OrganizationID: args.OrganizationID,
-		ID:             branch.ID,
-	}
-	err = s.repo.WithTx(tx).SetNullUserSelected(ctx, setNullUserSelectedParams)
-	if err != nil {
-		return err
+	if branch != nil && branch.ID > 0 {
+		setNullUserSelectedParams := SetNullUserSelectedParams{
+			OrganizationID: args.OrganizationID,
+			ID:             branch.ID,
+		}
+		err = s.repo.WithTx(tx).SetNullUserSelected(ctx, setNullUserSelectedParams)
+		if err != nil {
+			return err
+		}
 	}
 
 	setUserSelectedParams := SetUserSelectedParams{
