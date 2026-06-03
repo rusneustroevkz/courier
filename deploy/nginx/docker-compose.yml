@@ -9,7 +9,7 @@ services:
     networks:
       - postgres_courier-net
     volumes:
-      - ./deploy/nginx/config/courier.conf:/etc/nginx/conf.d/courier.conf:ro
+      - ./deploy/nginx/config/courier.conf:/etc/nginx/conf.d/:ro
       - ./deploy/nginx/certbot/conf:/etc/letsencrypt:ro
       - ./deploy/nginx/certbot/www:/var/www/certbot:ro
       - /var/logs/nginx:/var/log/nginx
