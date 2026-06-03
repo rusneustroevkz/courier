@@ -26,7 +26,7 @@ services:
 
 networks:
   courier-net:
-    driver: bridge
+    external: true
 
 volumes:
   redis_data:
