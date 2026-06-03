@@ -98,11 +98,15 @@ func (m *middleware) Auth(next http.Handler) http.Handler {
 
 func (m *middleware) CORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		origin := r.Header.Get("Origin")
+
 		if strings.Contains(m.cfg.Env, "prd") {
 			w.Header().Set("Access-Control-Allow-Origin", "https://b2b-courier-14.ru")
 		}
 		if strings.Contains(m.cfg.Env, "local") {
-			w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
+			if strings.Contains(origin, "localhost") || strings.Contains(origin, "ngrok-free.app") {
+				w.Header().Set("Access-Control-Allow-Origin", origin)
+			}
 		}
 
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
@@ -111,7 +115,7 @@ func (m *middleware) CORS(next http.Handler) http.Handler {
 		w.Header().Set("Connection", "keep-alive")
 		w.Header().Set(
 			"Access-Control-Allow-Headers",
-			"Access-Control-Allow-Headers,Origin,Accept,X-Requested-With,Content-Type,Access-Control-Request-Method,Access-Control-Request-Headers,Authorization,X-Service",
+			"Access-Control-Allow-Headers,Origin,Accept,X-Requested-With,Content-Type,Access-Control-Request-Method,Access-Control-Request-Headers,Authorization,X-Service,ngrok-skip-browser-warning",
 		)
 
 		if r.Method == http.MethodOptions {
