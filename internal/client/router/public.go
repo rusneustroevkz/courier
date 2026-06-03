@@ -43,7 +43,7 @@ func (rr *public) Routes() *chi.Mux {
 	mux.Use(rr.mw.RequestID)
 	mux.Use(rr.mw.RestorePanics)
 
-	mux.Route("/api/v1", func(r chi.Router) {
+	mux.Route("/client-backend-api/v1", func(r chi.Router) {
 		r.Route("/auth", func(r chi.Router) {
 			r.Post("/register", rr.authController.Register)
 			r.Post("/login", rr.authController.Login)
