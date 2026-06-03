@@ -18,4 +18,9 @@ limit $3;
 -- name: UpdateCourier :exec
 update orders
 set courier_id = $1, status = $2, updated_at = now()
-where id = $3;
+where id = $3 and organization_id = $4;
+
+-- name: CancelOrder :exec
+update orders
+set status = $1
+where id = $2 and organization_id = $3;

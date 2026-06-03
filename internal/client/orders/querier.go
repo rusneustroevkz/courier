@@ -9,6 +9,7 @@ import (
 )
 
 type Querier interface {
+	CancelOrder(ctx context.Context, arg CancelOrderParams) error
 	CreateOrder(ctx context.Context, arg CreateOrderParams) (int64, error)
 	GetAll(ctx context.Context, arg GetAllParams) ([]*Order, error)
 	GetByID(ctx context.Context, arg GetByIDParams) (*Order, error)

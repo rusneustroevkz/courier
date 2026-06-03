@@ -26,6 +26,7 @@ type Service interface {
 	GetByID(ctx context.Context, args GetByID) (*GetByIDResult, error)
 	GetAll(ctx context.Context, filter GetAll) (*GetAllResult, error)
 	GetCourierLocation(ctx context.Context, args GetCourierLocation) (*GetCourierLocationResult, error)
+	CancelOrder(ctx context.Context, args CancelOrder) error
 }
 
 type service struct {
@@ -378,4 +379,36 @@ func (s *service) GetCourierLocation(ctx context.Context, args GetCourierLocatio
 		Lat: courierLocation.Latitude,
 		Lon: courierLocation.Longitude,
 	}, nil
+}
+
+type CancelOrder struct {
+	OrderID        int64
+	OrganizationID int64
+}
+
+func (s *service) CancelOrder(ctx context.Context, args CancelOrder) error {
+	getByIDParams := GetByIDParams{
+		ID:             args.OrderID,
+		OrganizationID: args.OrganizationID,
+	}
+	order, err := s.ordersRepository.GetByID(ctx, getByIDParams)
+	if err != nil {
+		return err
+	}
+
+	cancelOrderParams := CancelOrderParams{
+		Status:         OrderStatusCancelled,
+		ID:             args.OrderID,
+		OrganizationID: args.OrganizationID,
+	}
+
+	if err := s.ordersRepository.CancelOrder(ctx, cancelOrderParams); err != nil {
+		return err
+	}
+
+	if order.CourierID.Valid {
+		return s.telegramBot.Send(ctx, order.CourierID.Int64, "Заказ отменен")
+	}
+
+	return nil
 }

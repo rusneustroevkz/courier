@@ -20,6 +20,7 @@ type Controller interface {
 	GetAll(w http.ResponseWriter, r *http.Request)
 	UpdateCourier(w http.ResponseWriter, r *http.Request)
 	GetCourierLocation(w http.ResponseWriter, r *http.Request)
+	CancelOrder(w http.ResponseWriter, r *http.Request)
 }
 
 type controller struct {
@@ -464,6 +465,81 @@ func (c *controller) GetCourierLocation(w http.ResponseWriter, r *http.Request) 
 	res.Data = &GetCourierLocationData{
 		Lat: location.Lat,
 		Lon: location.Lon,
+	}
+
+	responder.Responder(w, res, http.StatusOK)
+}
+
+type CancelOrderRequest struct {
+	OrderID int64 `json:"order_id"`
+}
+type CancelOrderResponse struct {
+	Errors map[string]string `json:"errors,omitempty"`
+}
+
+// CancelOrder Отмена заказа
+//
+//	@Summary      Отмена заказа
+//	@Description  Отмена заказа
+//	@Tags         orders
+//	@Accept       application/json
+//	@Produce      application/json
+//	@Param        request body CancelOrderRequest true "тело запроса"
+//	@Success      200  {object} CancelOrderResponse
+//	@Failure      400  {object} CancelOrderResponse
+//	@Failure      401  {object} CancelOrderResponse
+//	@Failure      404  {object} CancelOrderResponse
+//	@Failure      500  {object} CancelOrderResponse
+//	@Router       /orders/cancel [post]
+func (c *controller) CancelOrder(w http.ResponseWriter, r *http.Request) {
+	log := slog.With("method", "CancelOrder")
+
+	res := &CancelOrderResponse{
+		Errors: make(map[string]string),
+	}
+
+	var req CancelOrderRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		log.ErrorContext(r.Context(), "failed decode request", "error", err)
+		res.Errors["message"] = "Ошибка обработки запроса"
+		res.Errors["error"] = err.Error()
+		responder.Responder(w, res, http.StatusBadRequest)
+		return
+	}
+
+	userID, err := utils.GetFromCtx(r.Context())
+	if err != nil {
+		log.ErrorContext(r.Context(), "failed get user id from context", "error", err)
+		res.Errors["message"] = "В контексте отсутствует идентификатор пользователя"
+		res.Errors["error"] = err.Error()
+		responder.Responder(w, res, http.StatusBadRequest)
+		return
+	}
+	user, err := c.usersService.GetByID(r.Context(), userID)
+	if err != nil {
+		log.ErrorContext(r.Context(), "failed get user", "error", err)
+		res.Errors["message"] = "Ошибка выборки пользователя"
+		res.Errors["error"] = err.Error()
+		responder.Responder(w, res, http.StatusInternalServerError)
+		return
+	}
+
+	if !user.OrganizationID.Valid {
+		res.Errors["message"] = "Пользователь не привязан к организации"
+		responder.Responder(w, res, http.StatusInternalServerError)
+		return
+	}
+
+	params := CancelOrder{
+		OrderID:        req.OrderID,
+		OrganizationID: user.OrganizationID.Int64,
+	}
+	if err := c.ordersService.CancelOrder(r.Context(), params); err != nil {
+		log.ErrorContext(r.Context(), "failed cancel order", "error", err)
+		res.Errors["message"] = "Ошибка отмены заказа"
+		res.Errors["error"] = err.Error()
+		responder.Responder(w, res, http.StatusInternalServerError)
+		return
 	}
 
 	responder.Responder(w, res, http.StatusOK)

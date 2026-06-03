@@ -10,6 +10,23 @@ import (
 	"database/sql"
 )
 
+const cancelOrder = `-- name: CancelOrder :exec
+update orders
+set status = $1
+where id = $2 and organization_id = $3
+`
+
+type CancelOrderParams struct {
+	Status         OrderStatus `db:"status"`
+	ID             int64       `db:"id"`
+	OrganizationID int64       `db:"organization_id"`
+}
+
+func (q *Queries) CancelOrder(ctx context.Context, arg CancelOrderParams) error {
+	_, err := q.db.ExecContext(ctx, cancelOrder, arg.Status, arg.ID, arg.OrganizationID)
+	return err
+}
+
 const createOrder = `-- name: CreateOrder :one
 insert into orders(organization_id, from_address, from_lat, from_lon, to_address, to_lat, to_lon, description)
 values($1, $2, $3, $4, $5, $6, $7, $8)
@@ -145,16 +162,22 @@ func (q *Queries) GetByID(ctx context.Context, arg GetByIDParams) (*Order, error
 const updateCourier = `-- name: UpdateCourier :exec
 update orders
 set courier_id = $1, status = $2, updated_at = now()
-where id = $3
+where id = $3 and organization_id = $4
 `
 
 type UpdateCourierParams struct {
-	CourierID sql.NullInt64 `db:"courier_id"`
-	Status    OrderStatus   `db:"status"`
-	ID        int64         `db:"id"`
+	CourierID      sql.NullInt64 `db:"courier_id"`
+	Status         OrderStatus   `db:"status"`
+	ID             int64         `db:"id"`
+	OrganizationID int64         `db:"organization_id"`
 }
 
 func (q *Queries) UpdateCourier(ctx context.Context, arg UpdateCourierParams) error {
-	_, err := q.db.ExecContext(ctx, updateCourier, arg.CourierID, arg.Status, arg.ID)
+	_, err := q.db.ExecContext(ctx, updateCourier,
+		arg.CourierID,
+		arg.Status,
+		arg.ID,
+		arg.OrganizationID,
+	)
 	return err
 }
