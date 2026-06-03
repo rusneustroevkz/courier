@@ -2,14 +2,12 @@ services:
   backend:
     container_name: backend
     build:
-      context: deploy/backend
-      dockerfile: Dockerfile
+      context: ../../
+      dockerfile: deploy/backend/Dockerfile
     env_file:
       - .env
     restart: always
     expose:
-      - 80
-      - 443
       - 8080
     networks:
       - postgres_courier-net
