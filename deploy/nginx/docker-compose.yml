@@ -29,5 +29,5 @@ services:
       - courier-net
 
 networks:
-  courier-net:
+  postgres_courier-net:
     external: true

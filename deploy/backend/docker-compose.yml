@@ -26,5 +26,5 @@ services:
       start_period: 10s
 
 networks:
-  courier-net:
+  postgres_courier-net:
     external: true
