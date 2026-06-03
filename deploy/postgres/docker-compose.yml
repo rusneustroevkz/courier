@@ -19,7 +19,7 @@ services:
 
 networks:
   courier-net:
-    external: true
+    driver: bridge
 
 volumes:
   pg_data:
