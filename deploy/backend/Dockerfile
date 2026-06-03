@@ -16,7 +16,7 @@ WORKDIR /app
 RUN apk add --no-cache curl
 
 COPY --from=builder /app/main .
-COPY --from=builder /app/config/backend/config.yml .
+COPY --from=builder /app/config/config.yml .
 COPY .env .
 
 EXPOSE 8080
