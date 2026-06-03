@@ -7,7 +7,7 @@ services:
       - "80:80"
       - "443:443"
     networks:
-      - courier-net
+      - postgres_courier-net
     volumes:
       - ./deploy/nginx/config/conf.d:/etc/nginx/conf.d:ro
       - ./deploy/nginx/certbot/conf:/etc/letsencrypt:ro

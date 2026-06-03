@@ -12,7 +12,7 @@ services:
       - 443
       - 8080
     networks:
-      - courier-net
+      - postgres_courier-net
     depends_on:
       postgres:
         condition: service_healthy
