@@ -23,7 +23,7 @@ services:
     # Команда для проверки и обновления сертификатов каждые 12 часов
     entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
     networks:
-      - courier-net
+      - postgres_courier-net
 
 networks:
   postgres_courier-net:
