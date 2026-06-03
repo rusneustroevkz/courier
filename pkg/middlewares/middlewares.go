@@ -101,7 +101,7 @@ func (m *middleware) CORS(next http.Handler) http.Handler {
 		origin := r.Header.Get("Origin")
 
 		if strings.Contains(m.cfg.Env, "prd") {
-			w.Header().Set("Access-Control-Allow-Origin", "https://b2b-courier-14.ru")
+			w.Header().Set("Access-Control-Allow-Origin", "http://b2b-courier-14.ru")
 		}
 		if strings.Contains(m.cfg.Env, "local") {
 			if strings.Contains(origin, "localhost") || strings.Contains(origin, "ngrok-free.app") {
