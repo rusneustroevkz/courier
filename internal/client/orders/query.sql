@@ -23,4 +23,4 @@ where id = $3 and organization_id = $4;
 -- name: CancelOrder :exec
 update orders
 set status = $1
-where id = $2 and organization_id = $3;
+where id = $2 and organization_id = $3 and status not in ('delivered','cancelled');
