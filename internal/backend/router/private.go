@@ -1,6 +1,9 @@
 package router
 
-import "github.com/go-chi/chi/v5"
+import (
+	"github.com/go-chi/chi/v5"
+	"net/http"
+)
 
 type Private interface {
 	Routes() *chi.Mux
@@ -14,6 +17,10 @@ func NewPrivate() Private {
 
 func (r *private) Routes() *chi.Mux {
 	mux := chi.NewRouter()
+
+	mux.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
 
 	return mux
 }
