@@ -11,11 +11,6 @@ services:
       - 8080
     networks:
       - postgres_courier-net
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_started
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8080/health" ]
       interval: 30s
