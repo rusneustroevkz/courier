@@ -209,6 +209,25 @@ func (c *controller) GetByID(w http.ResponseWriter, r *http.Request) {
 		log.ErrorContext(r.Context(), "failed get order", "error", err)
 		res.Errors["message"] = "Ошибка выборки заказа"
 		res.Errors["error"] = err.Error()
+		if order != nil && order.ID > 0 {
+			res.Data = &GetByIDData{
+				ID:             order.ID,
+				Description:    order.Description,
+				OrganizationID: order.OrganizationID,
+				CourierID:      order.CourierID,
+				Status:         order.Status,
+				FromAddress:    order.FromAddress,
+				FromLat:        order.FromLat,
+				FromLon:        order.FromLon,
+				ToAddress:      order.ToAddress,
+				ToLat:          order.ToLat,
+				ToLon:          order.ToLon,
+				CreatedAt:      order.CreatedAt,
+				UpdatedAt:      order.UpdatedAt,
+				CourierLat:     order.CourierLat,
+				CourierLon:     order.CourierLon,
+			}
+		}
 		responder.Responder(w, res, http.StatusInternalServerError)
 		return
 	}

@@ -226,16 +226,16 @@ func (s *service) GetByID(ctx context.Context, args GetByID) (*GetByIDResult, er
 	if courierIDString != "" && orderIsActive {
 		val, err := s.redisClient.Client.Get(ctx, "location_"+courierIDString).Result()
 		if errors.Is(err, redislib.Nil) {
-			return nil, errors.New("Ключ не существует или срок его действия истек")
+			return &result, errors.New("Ключ не существует или срок его действия истек")
 		} else if err != nil {
-			return nil, errors.New("Ошибка при получении данных: " + err.Error())
+			return &result, errors.New("Ошибка при получении данных: " + err.Error())
 		}
 
 		var courierLocation redis.UserLocation
 
 		err = json.Unmarshal([]byte(val), &courierLocation)
 		if err != nil {
-			return nil, errors.New("Ошибка декодирования данных: " + err.Error())
+			return &result, errors.New("Ошибка декодирования данных: " + err.Error())
 		}
 
 		result.CourierLat = courierLocation.Latitude
