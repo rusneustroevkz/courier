@@ -15,12 +15,12 @@ where organization_id = $1
 offset $2
 limit $3;
 
--- name: UpdateCourier :exec
+-- name: Update :exec
 update orders
-set courier_id = $1, status = $2, updated_at = now()
-where id = $3 and organization_id = $4;
+set to_address = $1, to_lat = $2, to_lon = $3, description = $4, updated_at = now()
+where id = $5 and organization_id = $6;
 
 -- name: CancelOrder :exec
 update orders
-set status = $1
+set status = $1, updated_at = now()
 where id = $2 and organization_id = $3 and status not in ('delivered','cancelled');

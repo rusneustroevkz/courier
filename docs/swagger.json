@@ -220,6 +220,62 @@
             }
         },
         "/orders": {
+            "put": {
+                "description": "Обновление заказа",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "orders"
+                ],
+                "summary": "Обновление заказа",
+                "parameters": [
+                    {
+                        "description": "тело запроса",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/orders.UpdateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/orders.UpdateResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/orders.UpdateResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/orders.UpdateResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/orders.UpdateResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/orders.UpdateResponse"
+                        }
+                    }
+                }
+            },
             "post": {
                 "description": "Создание заказа",
                 "consumes": [
@@ -330,64 +386,6 @@
                         "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/orders.CancelOrderResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/orders/courier-location": {
-            "post": {
-                "description": "Локация курьера",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "orders"
-                ],
-                "summary": "Локация курьера",
-                "parameters": [
-                    {
-                        "description": "тело запроса",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/orders.GetCourierLocationRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/orders.GetCourierLocationResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/orders.GetCourierLocationResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/orders.GetCourierLocationResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/orders.GetCourierLocationResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/orders.GetCourierLocationResponse"
                         }
                     }
                 }
@@ -1279,30 +1277,31 @@
                 }
             }
         },
-        "orders.GetCourierLocationData": {
+        "orders.UpdateRequest": {
             "type": "object",
             "properties": {
-                "lat": {
-                    "type": "number"
+                "description": {
+                    "type": "string"
                 },
-                "lon": {
-                    "type": "number"
-                }
-            }
-        },
-        "orders.GetCourierLocationRequest": {
-            "type": "object",
-            "properties": {
                 "order_id": {
                     "type": "integer"
+                },
+                "to_address": {
+                    "type": "string"
+                },
+                "to_lat": {
+                    "type": "number"
+                },
+                "to_lon": {
+                    "type": "number"
                 }
             }
         },
-        "orders.GetCourierLocationResponse": {
+        "orders.UpdateResponse": {
             "type": "object",
             "properties": {
                 "data": {
-                    "$ref": "#/definitions/orders.GetCourierLocationData"
+                    "$ref": "#/definitions/orders.GetByIDData"
                 },
                 "errors": {
                     "type": "object",

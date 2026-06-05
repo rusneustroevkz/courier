@@ -57,8 +57,7 @@ func (rr *public) Routes() *chi.Mux {
 			r.Post("/", rr.ordersController.Create)
 			r.Post("/list", rr.ordersController.GetAll)
 			r.Get("/{id}", rr.ordersController.GetByID)
-			r.Put("/", rr.ordersController.UpdateCourier)
-			r.Post("/courier-location", rr.ordersController.GetCourierLocation)
+			r.Put("/", rr.ordersController.Update)
 			r.Post("/cancel", rr.ordersController.CancelOrder)
 		})
 		r.With(rr.mw.Auth).Route("/organizations-branches", func(r chi.Router) {

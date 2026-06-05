@@ -13,7 +13,7 @@ type Querier interface {
 	CreateOrder(ctx context.Context, arg CreateOrderParams) (int64, error)
 	GetAll(ctx context.Context, arg GetAllParams) ([]*Order, error)
 	GetByID(ctx context.Context, arg GetByIDParams) (*Order, error)
-	UpdateCourier(ctx context.Context, arg UpdateCourierParams) error
+	Update(ctx context.Context, arg UpdateParams) error
 }
 
 var _ Querier = (*Queries)(nil)

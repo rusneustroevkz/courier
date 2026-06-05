@@ -25,8 +25,8 @@ type Service interface {
 	Create(ctx context.Context, order Create) (int64, error)
 	GetByID(ctx context.Context, args GetByID) (*GetByIDResult, error)
 	GetAll(ctx context.Context, filter GetAll) (*GetAllResult, error)
-	GetCourierLocation(ctx context.Context, args GetCourierLocation) (*GetCourierLocationResult, error)
 	CancelOrder(ctx context.Context, args CancelOrder) error
+	Update(ctx context.Context, args Update) error
 }
 
 type service struct {
@@ -136,6 +136,92 @@ func (s *service) Create(ctx context.Context, args Create) (int64, error) {
 	return id, nil
 }
 
+type Update struct {
+	OrderID        int64
+	OrganizationID int64
+	UserID         int64
+	ToAddress      *string
+	ToLat          *float64
+	ToLon          *float64
+	Description    *string
+}
+
+func (s *service) Update(ctx context.Context, args Update) error {
+	getCurrentSelectedParams := organizations_branches.GetCurrentSelectedParams{
+		OrganizationID: args.OrganizationID,
+		UserSelected:   sql.NullInt64{Int64: args.UserID, Valid: args.UserID != 0},
+	}
+	branch, err := s.branchesRepo.GetCurrentSelected(ctx, getCurrentSelectedParams)
+	if err != nil {
+		return err
+	}
+
+	if branch == nil || branch.ID == 0 {
+		return errors.New("branch not found")
+	}
+	if !branch.Latitude.Valid || !branch.Longitude.Valid {
+		return errors.New("invalid coords")
+	}
+	if branch.Latitude.String == "" || branch.Longitude.String == "" {
+		return errors.New("bad coords")
+	}
+
+	getByIDParams := GetByIDParams{
+		ID:             args.OrderID,
+		OrganizationID: args.OrganizationID,
+	}
+	order, err := s.ordersRepository.GetByID(ctx, getByIDParams)
+	if err != nil {
+		return err
+	}
+
+	params := UpdateParams{
+		ToAddress:      order.ToAddress,
+		ToLat:          order.ToLat,
+		ToLon:          order.ToLon,
+		Description:    order.Description,
+		ID:             args.OrderID,
+		OrganizationID: args.OrganizationID,
+	}
+	if args.ToAddress != nil {
+		params.ToAddress = *args.ToAddress
+		if args.ToLat == nil || args.ToLon == nil {
+			return errors.New("bad coords")
+		}
+		params.ToLat = strconv.FormatFloat(*args.ToLat, 'g', -1, 64)
+		params.ToLon = strconv.FormatFloat(*args.ToLon, 'g', -1, 64)
+	}
+	if args.Description != nil {
+		params.Description = sql.NullString{
+			String: *args.Description,
+			Valid:  *args.Description != "",
+		}
+	}
+
+	if err := s.ordersRepository.Update(ctx, params); err != nil {
+		return err
+	}
+
+	toAddress := order.ToAddress
+	if args.ToAddress != nil {
+		toAddress = *args.ToAddress
+	}
+
+	text := fmt.Sprintf("Заказ изменился\n\nОт: %s\nДо: %s", branch.Address, toAddress)
+
+	if args.Description != nil {
+		text += "\nОписание: " + *args.Description
+	}
+
+	if order.CourierID.Valid {
+		if err := s.telegramBot.Send(ctx, order.CourierID.Int64, text); err != nil {
+			slog.ErrorContext(ctx, "failed to send telegram msg on create order", "err", err, "user_id", order.CourierID.Int64)
+		}
+	}
+
+	return nil
+}
+
 type GetByID struct {
 	ID             int64
 	OrganizationID int64
@@ -226,7 +312,7 @@ func (s *service) GetByID(ctx context.Context, args GetByID) (*GetByIDResult, er
 	if courierIDString != "" && orderIsActive {
 		val, err := s.redisClient.Client.Get(ctx, "location_"+courierIDString).Result()
 		if errors.Is(err, redislib.Nil) {
-			return &result, errors.New("Ключ не существует или срок его действия истек")
+			return &result, errors.New("Локация курьера не существует или срок его действия истек")
 		} else if err != nil {
 			return &result, errors.New("Ошибка при получении данных: " + err.Error())
 		}
@@ -334,50 +420,6 @@ func (s *service) GetAll(ctx context.Context, filter GetAll) (*GetAllResult, err
 		Data:       orders,
 		TotalCount: totalCount,
 		TotalPages: totalPages,
-	}, nil
-}
-
-type GetCourierLocation struct {
-	OrderID        int64
-	OrganizationID int64
-}
-type GetCourierLocationResult struct {
-	Lat float32
-	Lon float32
-}
-
-func (s *service) GetCourierLocation(ctx context.Context, args GetCourierLocation) (*GetCourierLocationResult, error) {
-	getByIDParams := GetByIDParams{
-		ID:             args.OrderID,
-		OrganizationID: args.OrganizationID,
-	}
-	order, err := s.ordersRepository.GetByID(ctx, getByIDParams)
-	if err != nil {
-		return nil, err
-	}
-
-	if !order.CourierID.Valid {
-		return nil, errors.New("invalid courier id")
-	}
-
-	courierIDString := strconv.Itoa(int(order.TgCourierChatID.Int64))
-	val, err := s.redisClient.Client.Get(ctx, "location_"+courierIDString).Result()
-	if errors.Is(err, redislib.Nil) {
-		return nil, errors.New("Ключ не существует или срок его действия истек")
-	} else if err != nil {
-		return nil, errors.New("Ошибка при получении данных: " + err.Error())
-	}
-
-	var courierLocation redis.UserLocation
-
-	err = json.Unmarshal([]byte(val), &courierLocation)
-	if err != nil {
-		return nil, errors.New("Ошибка декодирования данных: " + err.Error())
-	}
-
-	return &GetCourierLocationResult{
-		Lat: courierLocation.Latitude,
-		Lon: courierLocation.Longitude,
 	}, nil
 }
 

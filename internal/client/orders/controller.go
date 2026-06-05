@@ -18,8 +18,7 @@ type Controller interface {
 	Create(w http.ResponseWriter, r *http.Request)
 	GetByID(w http.ResponseWriter, r *http.Request)
 	GetAll(w http.ResponseWriter, r *http.Request)
-	UpdateCourier(w http.ResponseWriter, r *http.Request)
-	GetCourierLocation(w http.ResponseWriter, r *http.Request)
+	Update(w http.ResponseWriter, r *http.Request)
 	CancelOrder(w http.ResponseWriter, r *http.Request)
 }
 
@@ -209,27 +208,10 @@ func (c *controller) GetByID(w http.ResponseWriter, r *http.Request) {
 		log.ErrorContext(r.Context(), "failed get order", "error", err)
 		res.Errors["message"] = "Ошибка выборки заказа"
 		res.Errors["error"] = err.Error()
-		if order != nil && order.ID > 0 {
-			res.Data = &GetByIDData{
-				ID:             order.ID,
-				Description:    order.Description,
-				OrganizationID: order.OrganizationID,
-				CourierID:      order.CourierID,
-				Status:         order.Status,
-				FromAddress:    order.FromAddress,
-				FromLat:        order.FromLat,
-				FromLon:        order.FromLon,
-				ToAddress:      order.ToAddress,
-				ToLat:          order.ToLat,
-				ToLon:          order.ToLon,
-				CreatedAt:      order.CreatedAt,
-				UpdatedAt:      order.UpdatedAt,
-				CourierLat:     order.CourierLat,
-				CourierLon:     order.CourierLon,
-			}
+		if order == nil || order.ID == 0 {
+			responder.Responder(w, res, http.StatusInternalServerError)
+			return
 		}
-		responder.Responder(w, res, http.StatusInternalServerError)
-		return
 	}
 
 	res.Data = &GetByIDData{
@@ -401,42 +383,40 @@ func (c *controller) GetAll(w http.ResponseWriter, r *http.Request) {
 	responder.Responder(w, res, http.StatusOK)
 }
 
-func (c *controller) UpdateCourier(w http.ResponseWriter, r *http.Request) {}
-
-type GetCourierLocationRequest struct {
-	OrderID int64 `json:"order_id"`
+type UpdateRequest struct {
+	ToAddress   *string  `json:"to_address,omitempty"`
+	ToLat       *float64 `json:"to_lat,omitempty"`
+	ToLon       *float64 `json:"to_lon,omitempty"`
+	Description *string  `json:"description,omitempty"`
+	OrderID     int64    `json:"order_id"`
 }
-type GetCourierLocationResponse struct {
-	Errors map[string]string       `json:"errors,omitempty"`
-	Data   *GetCourierLocationData `json:"data,omitempty"`
-}
-type GetCourierLocationData struct {
-	Lat float32 `json:"lat"`
-	Lon float32 `json:"lon"`
+type UpdateResponse struct {
+	Errors map[string]string `json:"errors,omitempty"`
+	Data   *GetByIDData      `json:"data,omitempty"`
 }
 
-// GetCourierLocation Локация курьера
+// Update Обновление заказа
 //
-//	@Summary      Локация курьера
-//	@Description  Локация курьера
+//	@Summary      Обновление заказа
+//	@Description  Обновление заказа
 //	@Tags         orders
 //	@Accept       application/json
 //	@Produce      application/json
-//	@Param        request body GetCourierLocationRequest true "тело запроса"
-//	@Success      200  {object} GetCourierLocationResponse
-//	@Failure      400  {object} GetCourierLocationResponse
-//	@Failure      401  {object} GetCourierLocationResponse
-//	@Failure      404  {object} GetCourierLocationResponse
-//	@Failure      500  {object} GetCourierLocationResponse
-//	@Router       /orders/courier-location [post]
-func (c *controller) GetCourierLocation(w http.ResponseWriter, r *http.Request) {
-	log := slog.With("method", "GetCourierLocation")
+//	@Param        request body UpdateRequest true "тело запроса"
+//	@Success      200  {object} UpdateResponse
+//	@Failure      400  {object} UpdateResponse
+//	@Failure      401  {object} UpdateResponse
+//	@Failure      404  {object} UpdateResponse
+//	@Failure      500  {object} UpdateResponse
+//	@Router       /orders [put]
+func (c *controller) Update(w http.ResponseWriter, r *http.Request) {
+	log := slog.With("method", "UpdateOrder")
 
-	res := &GetCourierLocationResponse{
+	res := &UpdateResponse{
 		Errors: make(map[string]string),
 	}
 
-	var req GetCourierLocationRequest
+	var req UpdateRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		log.ErrorContext(r.Context(), "failed decode request", "error", err)
 		res.Errors["message"] = "Ошибка обработки запроса"
@@ -449,7 +429,6 @@ func (c *controller) GetCourierLocation(w http.ResponseWriter, r *http.Request) 
 	if err != nil {
 		log.ErrorContext(r.Context(), "failed get user id from context", "error", err)
 		res.Errors["message"] = "В контексте отсутствует идентификатор пользователя"
-		res.Errors["error"] = err.Error()
 		responder.Responder(w, res, http.StatusBadRequest)
 		return
 	}
@@ -457,7 +436,6 @@ func (c *controller) GetCourierLocation(w http.ResponseWriter, r *http.Request) 
 	if err != nil {
 		log.ErrorContext(r.Context(), "failed get user", "error", err)
 		res.Errors["message"] = "Ошибка выборки пользователя"
-		res.Errors["error"] = err.Error()
 		responder.Responder(w, res, http.StatusInternalServerError)
 		return
 	}
@@ -468,22 +446,22 @@ func (c *controller) GetCourierLocation(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	params := GetCourierLocation{
-		OrderID:        req.OrderID,
+	params := Update{
 		OrganizationID: user.OrganizationID.Int64,
+		UserID:         userID,
+		OrderID:        req.OrderID,
+		ToAddress:      req.ToAddress,
+		ToLat:          req.ToLat,
+		ToLon:          req.ToLon,
+		Description:    req.Description,
 	}
-	location, err := c.ordersService.GetCourierLocation(r.Context(), params)
-	if err != nil {
-		log.ErrorContext(r.Context(), "failed get order", "error", err)
-		res.Errors["message"] = "Ошибка выборки заказа"
+
+	if err := c.ordersService.Update(r.Context(), params); err != nil {
+		log.ErrorContext(r.Context(), "failed create orders", "error", err)
+		res.Errors["message"] = "Не удалось создать заказ"
 		res.Errors["error"] = err.Error()
 		responder.Responder(w, res, http.StatusInternalServerError)
 		return
-	}
-
-	res.Data = &GetCourierLocationData{
-		Lat: location.Lat,
-		Lon: location.Lon,
 	}
 
 	responder.Responder(w, res, http.StatusOK)
