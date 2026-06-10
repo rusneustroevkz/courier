@@ -3,9 +3,12 @@ package telegram
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
+	"fmt"
 	"github.com/pkg/errors"
 	"github.com/rusneustroevkz/courier/internal/backend/orders"
 	"github.com/rusneustroevkz/courier/internal/backend/users"
+	"github.com/rusneustroevkz/courier/pkg/redis"
 	"gopkg.in/telebot.v4"
 	"log/slog"
 	"strconv"
@@ -54,6 +57,9 @@ func (t *Telegram) CommandStart(ct telebot.Context) error {
 		}
 	}
 
+	var opts []MenuOption
+	params := make(profileParams)
+
 	var order *orders.GetByIDResult
 	if user.OnWork && user.IsShareLocation {
 		order, err = t.ordersService.GetActiveOrder(ctx, sender.ID)
@@ -61,10 +67,39 @@ func (t *Telegram) CommandStart(ct telebot.Context) error {
 			log.ErrorContext(ctx, "failed to get active order", "error", err)
 			return t.SendWithProfile(ct, "Ошибка выборки активного заказа")
 		}
-	}
 
-	var opts []MenuOption
-	params := make(profileParams)
+		if order != nil {
+			courierIDString := fmt.Sprintf("%d", ct.Sender().ID)
+
+			val, err := t.redisClient.Client.Get(ctx, "location_"+courierIDString).Result()
+			if err == nil {
+				var courierLocation redis.UserLocation
+
+				if err := json.Unmarshal([]byte(val), &courierLocation); err == nil {
+					var pointA, pointB GeoPoint
+					var errLat, errLon error
+					if order.Status == orders.OrderStatusAccepted {
+						pointA.Lat, errLat = strconv.ParseFloat(order.FromLat, 64)
+						pointA.Lon, errLon = strconv.ParseFloat(order.FromLon, 64)
+					}
+					if order.Status == orders.OrderStatusPickedUp {
+						pointA.Lat, errLat = strconv.ParseFloat(order.ToLat, 64)
+						pointA.Lon, errLon = strconv.ParseFloat(order.ToLon, 64)
+					}
+
+					pointB.Lat = float64(courierLocation.Latitude)
+					pointB.Lon = float64(courierLocation.Longitude)
+
+					if errLat != nil || errLon != nil {
+						log.ErrorContext(ctx, "failed to get active order", "error", errLat, errLon)
+					} else {
+						dist := DistanceEarth(pointA, pointB)
+						params["dist"] = dist
+					}
+				}
+			}
+		}
+	}
 
 	hasActiveOrder := order != nil && order.ID > 0
 	if hasActiveOrder {

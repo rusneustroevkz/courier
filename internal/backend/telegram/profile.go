@@ -1,6 +1,7 @@
 package telegram
 
 import (
+	"fmt"
 	"strings"
 )
 
@@ -43,6 +44,9 @@ func (t *Telegram) Profile(profileParams profileParams) string {
 			}
 			if val, ok := profileParams["to_address"]; ok {
 				what.WriteString("\nДо: " + val.(string))
+			}
+			if val, ok := profileParams["dist"]; ok {
+				what.WriteString(fmt.Sprintf("\nДистанция: %.0f м", val))
 			}
 			what.WriteString("</blockquote>")
 		}

@@ -73,7 +73,7 @@ func (c *controller) My(w http.ResponseWriter, r *http.Request) {
 		ID:   organization.ID,
 		Name: organization.Name,
 	}
-	balance, err := strconv.ParseFloat(organization.Balance, 10)
+	balance, err := strconv.ParseFloat(organization.Balance, 64)
 	if err != nil {
 		log.ErrorContext(r.Context(), "failed parse balance", "error", err)
 		res.Errors["message"] = "Ошибка расчета баланса"

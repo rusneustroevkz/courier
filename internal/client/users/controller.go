@@ -96,7 +96,7 @@ func (c *controller) GetMe(w http.ResponseWriter, r *http.Request) {
 		res.Data.Phone = user.Phone.String
 	}
 	if user.Rating.Valid {
-		rating, err := strconv.ParseFloat(user.Rating.String, 10)
+		rating, err := strconv.ParseFloat(user.Rating.String, 64)
 		if err != nil {
 			log.ErrorContext(r.Context(), "failed parse rating", "error", err)
 			res.Errors["rating"] = err.Error()
@@ -105,7 +105,7 @@ func (c *controller) GetMe(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if user.Balance.Valid {
-		balance, err := strconv.ParseFloat(user.Balance.String, 10)
+		balance, err := strconv.ParseFloat(user.Balance.String, 64)
 		if err != nil {
 			log.ErrorContext(r.Context(), "failed parse balance", "error", err)
 			res.Errors["balance"] = err.Error()

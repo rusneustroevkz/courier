@@ -258,7 +258,7 @@ func (s *service) DoneOrder(ctx context.Context, orderID int64) error {
 		return err
 	}
 
-	balance, err := strconv.ParseFloat(organization.Balance, 10)
+	balance, err := strconv.ParseFloat(organization.Balance, 64)
 	if err != nil {
 		return err
 	}
