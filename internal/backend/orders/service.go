@@ -3,6 +3,9 @@ package orders
 import (
 	"context"
 	"database/sql"
+	"github.com/jmoiron/sqlx"
+	"github.com/rusneustroevkz/courier/internal/backend/organizations"
+	"strconv"
 	"time"
 )
 
@@ -15,12 +18,16 @@ type Service interface {
 }
 
 type service struct {
-	ordersRepository Querier
+	ordersRepository        *Queries
+	organizationsRepository *organizations.Queries
+	db                      *sqlx.DB
 }
 
-func NewService(ordersRepository Querier) Service {
+func NewService(db *sqlx.DB, ordersRepository *Queries, organizationsRepository *organizations.Queries) Service {
 	return &service{
-		ordersRepository: ordersRepository,
+		ordersRepository:        ordersRepository,
+		organizationsRepository: organizationsRepository,
+		db:                      db,
 	}
 }
 
@@ -228,5 +235,46 @@ func (s *service) GetActiveOrder(ctx context.Context, userID int64) (*GetByIDRes
 }
 
 func (s *service) DoneOrder(ctx context.Context, orderID int64) error {
-	return s.ordersRepository.DoneOrder(ctx, orderID)
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		_ = tx.Rollback()
+	}()
+
+	order, err := s.ordersRepository.GetByID(ctx, orderID)
+	if err != nil {
+		return err
+	}
+
+	if err := s.ordersRepository.WithTx(tx).DoneOrder(ctx, orderID); err != nil {
+		return err
+	}
+
+	organization, err := s.organizationsRepository.GetByID(ctx, order.OrganizationID)
+	if err != nil {
+		return err
+	}
+
+	balance, err := strconv.ParseFloat(organization.Balance, 10)
+	if err != nil {
+		return err
+	}
+	newBalance := balance - 100.00
+
+	payOrderParams := organizations.PayOrderParams{
+		Balance: strconv.FormatFloat(newBalance, 'f', -1, 64),
+		ID:      organization.ID,
+	}
+	if err := s.organizationsRepository.WithTx(tx).PayOrder(ctx, payOrderParams); err != nil {
+		return err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -12,6 +12,7 @@ import (
 
 	"github.com/rusneustroevkz/courier/internal/backend/config"
 	"github.com/rusneustroevkz/courier/internal/backend/orders"
+	"github.com/rusneustroevkz/courier/internal/backend/organizations"
 	"github.com/rusneustroevkz/courier/internal/backend/router"
 	"github.com/rusneustroevkz/courier/internal/backend/telegram"
 	"github.com/rusneustroevkz/courier/internal/backend/users"
@@ -54,9 +55,10 @@ func main() {
 
 	usersRepository := users.New(db.DB)
 	ordersRepository := orders.New(db.DB)
+	organizationsRepository := organizations.New(db.DB)
 
 	usersService := users.NewService(usersRepository)
-	ordersService := orders.NewService(ordersRepository)
+	ordersService := orders.NewService(db.DB, ordersRepository, organizationsRepository)
 
 	go func() {
 		t := time.NewTicker(1 * time.Minute)
