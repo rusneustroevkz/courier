@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/rusneustroevkz/courier/internal/client/organizations"
 	"log/slog"
 	"strconv"
 	"time"
@@ -30,12 +31,13 @@ type Service interface {
 }
 
 type service struct {
-	db               *sqlx.DB
-	ordersRepository Querier
-	branchesRepo     organizations_branches.Querier
-	redisClient      *redis.Redis
-	telegramBot      *telegram.Telegram
-	usersRepo        users.Querier
+	db                      *sqlx.DB
+	ordersRepository        Querier
+	branchesRepo            organizations_branches.Querier
+	redisClient             *redis.Redis
+	telegramBot             *telegram.Telegram
+	usersRepo               users.Querier
+	organizationsRepository organizations.Querier
 }
 
 func NewService(
@@ -45,14 +47,16 @@ func NewService(
 	redisClient *redis.Redis,
 	telegramBot *telegram.Telegram,
 	usersRepo users.Querier,
+	organizationsRepository organizations.Querier,
 ) Service {
 	return &service{
-		db:               db,
-		ordersRepository: ordersRepository,
-		branchesRepo:     branchesRepo,
-		redisClient:      redisClient,
-		telegramBot:      telegramBot,
-		usersRepo:        usersRepo,
+		db:                      db,
+		ordersRepository:        ordersRepository,
+		branchesRepo:            branchesRepo,
+		redisClient:             redisClient,
+		telegramBot:             telegramBot,
+		usersRepo:               usersRepo,
+		organizationsRepository: organizationsRepository,
 	}
 }
 
@@ -83,6 +87,19 @@ func (s *service) Create(ctx context.Context, args Create) (int64, error) {
 	}
 	if branch.Latitude.String == "" || branch.Longitude.String == "" {
 		return 0, errors.New("bad coords")
+	}
+
+	organization, err := s.organizationsRepository.GetByID(ctx, args.OrganizationID)
+	if err != nil {
+		return 0, err
+	}
+
+	balance, err := strconv.ParseFloat(organization.Balance, 64)
+	if err != nil {
+		return 0, errors.New("invalid balance")
+	}
+	if balance < 100 {
+		return 0, errors.New("balance is less 100")
 	}
 
 	params := CreateOrderParams{

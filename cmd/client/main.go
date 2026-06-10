@@ -101,7 +101,7 @@ func main() {
 	organizationsBranchesController := organizations_branches.NewController(organizationsBranchesService, usersService)
 
 	ordersRepository := orders.New(db.DB)
-	ordersService := orders.NewService(db.DB, ordersRepository, organizationsBranchesRepository, redisClient, telegramBot, usersRepository)
+	ordersService := orders.NewService(db.DB, ordersRepository, organizationsBranchesRepository, redisClient, telegramBot, usersRepository, organizationsRepository)
 	ordersController := orders.NewController(usersService, ordersService)
 
 	authRepository := auth.New(db.DB)
