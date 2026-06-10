@@ -4,6 +4,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/rusneustroevkz/courier/internal/client/auth"
 	"github.com/rusneustroevkz/courier/internal/client/orders"
+	"github.com/rusneustroevkz/courier/internal/client/organizations"
 	"github.com/rusneustroevkz/courier/internal/client/organizations_branches"
 	"github.com/rusneustroevkz/courier/internal/client/users"
 	"github.com/rusneustroevkz/courier/pkg/middlewares"
@@ -19,6 +20,7 @@ type public struct {
 	authController                  auth.Controller
 	ordersController                orders.Controller
 	organizationsBranchesController organizations_branches.Controller
+	organizationsController         organizations.Controller
 }
 
 func NewPublic(
@@ -27,6 +29,7 @@ func NewPublic(
 	authController auth.Controller,
 	ordersController orders.Controller,
 	organizationsBranchesController organizations_branches.Controller,
+	organizationsController organizations.Controller,
 ) Public {
 	return &public{
 		mw:                              mw,
@@ -34,6 +37,7 @@ func NewPublic(
 		authController:                  authController,
 		ordersController:                ordersController,
 		organizationsBranchesController: organizationsBranchesController,
+		organizationsController:         organizationsController,
 	}
 }
 
@@ -67,6 +71,9 @@ func (rr *public) Routes() *chi.Mux {
 			r.Post("/suggest", rr.organizationsBranchesController.Suggest)
 			r.Post("/set-activation", rr.organizationsBranchesController.SetActivation)
 			r.Post("/set-user-selected", rr.organizationsBranchesController.SetUserSelected)
+		})
+		r.With(rr.mw.Auth).Route("/organizations", func(r chi.Router) {
+			r.Get("/my", rr.organizationsController.My)
 		})
 	})
 

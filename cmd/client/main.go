@@ -85,6 +85,8 @@ func main() {
 	}
 
 	organizationsRepository := organizations.New(db.DB)
+	organizationsService := organizations.NewService(organizationsRepository)
+	organizationsController := organizations.NewController(organizationsService)
 
 	branchGeozoneRepository := branch_geozones.New(db.DB)
 
@@ -118,7 +120,7 @@ func main() {
 	}()
 	slog.Info("starting private server", "port", cfg.PrivateServer.Port)
 
-	publicRouter := router.NewPublic(mw, usersController, authController, ordersController, organizationsBranchesController)
+	publicRouter := router.NewPublic(mw, usersController, authController, ordersController, organizationsBranchesController, organizationsController)
 	publicServer := server.New(cfg.PublicServer, publicRouter.Routes())
 	go func() {
 		if err := publicServer.Start(); err != nil && !errors.Is(err, http.ErrServerClosed) {

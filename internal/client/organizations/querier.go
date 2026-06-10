@@ -10,6 +10,7 @@ import (
 
 type Querier interface {
 	GetByID(ctx context.Context, id int64) (*Organization, error)
+	GetByUserID(ctx context.Context, id int64) (*GetByUserIDRow, error)
 }
 
 var _ Querier = (*Queries)(nil)

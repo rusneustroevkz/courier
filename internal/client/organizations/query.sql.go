@@ -30,3 +30,23 @@ func (q *Queries) GetByID(ctx context.Context, id int64) (*Organization, error) 
 	)
 	return &i, err
 }
+
+const getByUserID = `-- name: GetByUserID :one
+SELECT o.id, o.name, o.balance
+FROM organizations o
+         INNER JOIN users u ON o.id = u.organization_id
+WHERE u.id = $1
+`
+
+type GetByUserIDRow struct {
+	ID      int64  `db:"id"`
+	Name    string `db:"name"`
+	Balance string `db:"balance"`
+}
+
+func (q *Queries) GetByUserID(ctx context.Context, id int64) (*GetByUserIDRow, error) {
+	row := q.db.QueryRowContext(ctx, getByUserID, id)
+	var i GetByUserIDRow
+	err := row.Scan(&i.ID, &i.Name, &i.Balance)
+	return &i, err
+}
