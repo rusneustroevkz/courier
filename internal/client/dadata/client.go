@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/rusneustroevkz/courier/internal/client/branch_geozones"
 )
 
 const (
@@ -24,10 +25,11 @@ type Dadata interface {
 }
 
 type dadata struct {
-	cl *http.Client
+	cl                      *http.Client
+	branchGeozoneRepository branch_geozones.Querier
 }
 
-func NewDadata() Dadata {
+func NewDadata(branchGeozoneRepository branch_geozones.Querier) Dadata {
 	transport := &http.Transport{
 		TLSHandshakeTimeout: 5 * time.Second,
 	}
@@ -37,6 +39,7 @@ func NewDadata() Dadata {
 			Timeout:   5 * time.Second,
 			Transport: transport,
 		},
+		branchGeozoneRepository: branchGeozoneRepository,
 	}
 }
 
@@ -150,6 +153,26 @@ func (s *dadata) Suggest(ctx context.Context, address, userAgent string) ([]Sear
 			continue
 		}
 		if _, exists := seen[fullAddress]; exists {
+			continue
+		}
+
+		if result.SuggestData.GeoLat == "" || result.SuggestData.GeoLon == "" {
+			continue
+		}
+
+		// Делаем запрос в репозиторий для проверки геозоны, которая зафиксирована в структуре (s.branchGeozone.ID)
+		getByCoordsParams := branch_geozones.GetByCoordsParams{
+			Column1: result.SuggestData.GeoLon,
+			Column2: result.SuggestData.GeoLat,
+		}
+		zone, err := s.branchGeozoneRepository.GetByCoords(ctx, getByCoordsParams)
+		if err != nil {
+			slog.Error("failed to check if point is in geozone", "error", err)
+			continue
+		}
+
+		// Сама фильтрация: если точка ВНЕ зоны, игнорируем подсказку
+		if zone == nil || zone.OrganizationBranchID == 0 {
 			continue
 		}
 

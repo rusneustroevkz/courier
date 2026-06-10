@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/rusneustroevkz/courier/internal/client/branch_geozones"
 	"github.com/rusneustroevkz/courier/internal/client/telegram"
 	"log/slog"
 	"net/http"
@@ -85,7 +86,9 @@ func main() {
 
 	organizationsRepository := organizations.New(db.DB)
 
-	dadataClient := dadata.NewDadata()
+	branchGeozoneRepository := branch_geozones.New(db.DB)
+
+	dadataClient := dadata.NewDadata(branchGeozoneRepository)
 
 	usersRepository := users.New(db.DB)
 	usersService := users.NewService(usersRepository, organizationsRepository)

@@ -1,7 +1,9 @@
 services:
   postgres:
     container_name: postgres
-    image: postgres:18.3-alpine
+    build:
+      context: .
+      dockerfile: Dockerfile
     restart: always
     env_file:
       - .env
