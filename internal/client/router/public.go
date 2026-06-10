@@ -51,7 +51,7 @@ func (rr *public) Routes() *chi.Mux {
 		r.Route("/auth", func(r chi.Router) {
 			r.Post("/register", rr.authController.Register)
 			r.Post("/login", rr.authController.Login)
-			r.With(rr.mw.Auth).Post("/refresh", rr.authController.Refresh)
+			r.Post("/refresh", rr.authController.Refresh)
 			r.With(rr.mw.Auth).Post("/logout", rr.authController.Logout)
 		})
 		r.With(rr.mw.Auth).Route("/users", func(r chi.Router) {

@@ -2,12 +2,12 @@ package auth
 
 import (
 	"encoding/json"
-	"github.com/rusneustroevkz/courier/internal/client/config"
 	"log/slog"
 	"net/http"
 	"time"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/rusneustroevkz/courier/internal/client/config"
 	"github.com/rusneustroevkz/courier/pkg/responder"
 )
 
@@ -157,7 +157,7 @@ func (c *controller) Refresh(w http.ResponseWriter, r *http.Request) {
 		Expires:  time.Now().Add(refreshTokenTTL),
 		HttpOnly: true,
 		Secure:   true,
-		Path:     "/api/v1/auth/refresh",
+		Path:     "",
 	})
 
 	responder.Responder(w, res, http.StatusOK)
