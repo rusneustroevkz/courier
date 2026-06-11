@@ -45,7 +45,7 @@ func (q *Queries) DoneOrder(ctx context.Context, id int64) error {
 }
 
 const getByID = `-- name: GetByID :one
-select id, description, organization_id, status, from_address, from_lat, from_lon, to_address, to_lat, to_lon, created_at, updated_at, branch_id, courier_earnings, delivery_distance_meters, tg_courier_chat_id, accepted_at, picked_up_at, delivered_at, cancelled_at, courier_id
+select id, description, organization_id, status, from_address, from_lat, from_lon, to_address, to_lat, to_lon, created_at, updated_at, branch_id, courier_earnings, delivery_distance_meters, tg_courier_chat_id, accepted_at, picked_up_at, delivered_at, cancelled_at, courier_id, price
 from orders
 where id = $1
 `
@@ -75,12 +75,13 @@ func (q *Queries) GetByID(ctx context.Context, id int64) (*Order, error) {
 		&i.DeliveredAt,
 		&i.CancelledAt,
 		&i.CourierID,
+		&i.Price,
 	)
 	return &i, err
 }
 
 const getCourierActiveOrder = `-- name: GetCourierActiveOrder :one
-select id, description, organization_id, status, from_address, from_lat, from_lon, to_address, to_lat, to_lon, created_at, updated_at, branch_id, courier_earnings, delivery_distance_meters, tg_courier_chat_id, accepted_at, picked_up_at, delivered_at, cancelled_at, courier_id
+select id, description, organization_id, status, from_address, from_lat, from_lon, to_address, to_lat, to_lon, created_at, updated_at, branch_id, courier_earnings, delivery_distance_meters, tg_courier_chat_id, accepted_at, picked_up_at, delivered_at, cancelled_at, courier_id, price
 from orders
 where courier_id = $1 and status not in ('created','delivered','cancelled')
 limit 1
@@ -111,12 +112,13 @@ func (q *Queries) GetCourierActiveOrder(ctx context.Context, courierID sql.NullI
 		&i.DeliveredAt,
 		&i.CancelledAt,
 		&i.CourierID,
+		&i.Price,
 	)
 	return &i, err
 }
 
 const getPendingOrders = `-- name: GetPendingOrders :many
-select id, description, organization_id, status, from_address, from_lat, from_lon, to_address, to_lat, to_lon, created_at, updated_at, branch_id, courier_earnings, delivery_distance_meters, tg_courier_chat_id, accepted_at, picked_up_at, delivered_at, cancelled_at, courier_id
+select id, description, organization_id, status, from_address, from_lat, from_lon, to_address, to_lat, to_lon, created_at, updated_at, branch_id, courier_earnings, delivery_distance_meters, tg_courier_chat_id, accepted_at, picked_up_at, delivered_at, cancelled_at, courier_id, price
 from orders
 where status = 'created'
 `
@@ -152,6 +154,7 @@ func (q *Queries) GetPendingOrders(ctx context.Context) ([]*Order, error) {
 			&i.DeliveredAt,
 			&i.CancelledAt,
 			&i.CourierID,
+			&i.Price,
 		); err != nil {
 			return nil, err
 		}

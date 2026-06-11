@@ -78,4 +78,5 @@ type Order struct {
 	DeliveredAt            sql.NullTime   `db:"delivered_at"`
 	CancelledAt            sql.NullTime   `db:"cancelled_at"`
 	CourierID              sql.NullInt64  `db:"courier_id"`
+	Price                  sql.NullString `db:"price"`
 }

@@ -74,6 +74,7 @@ func (rr *public) Routes() *chi.Mux {
 		})
 		r.With(rr.mw.Auth).Route("/organizations", func(r chi.Router) {
 			r.Get("/my", rr.organizationsController.My)
+			r.Post("/transactions", rr.organizationsController.Transactions)
 		})
 	})
 

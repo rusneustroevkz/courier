@@ -116,9 +116,6 @@ func (c *controller) GetMe(w http.ResponseWriter, r *http.Request) {
 	if user.OrganizationID.Valid {
 		res.Data.OrganizationID = user.OrganizationID.Int64
 	}
-	if user.OrganizationName.Valid {
-		res.Data.OrganizationName = user.OrganizationName.String
-	}
 
 	responder.Responder(w, res, http.StatusOK)
 }

@@ -4,8 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"time"
-
-	"github.com/rusneustroevkz/courier/internal/client/organizations"
 )
 
 type Service interface {
@@ -13,33 +11,30 @@ type Service interface {
 }
 
 type service struct {
-	usersRepository         Querier
-	organizationsRepository organizations.Querier
+	usersRepository Querier
 }
 
-func NewService(usersRepository Querier, organizationsRepository organizations.Querier) Service {
+func NewService(usersRepository Querier) Service {
 	return &service{
-		usersRepository:         usersRepository,
-		organizationsRepository: organizationsRepository,
+		usersRepository: usersRepository,
 	}
 }
 
 type GetByIDResult struct {
-	ID               int64
-	TgID             sql.NullInt64
-	FullName         sql.NullString
-	Email            sql.NullString
-	Phone            sql.NullString
-	Role             RoleType
-	OnWork           bool
-	Verified         bool
-	Rating           sql.NullString
-	Balance          sql.NullString
-	CreatedAt        time.Time
-	UpdatedAt        time.Time
-	PasswordHash     sql.NullString
-	OrganizationID   sql.NullInt64
-	OrganizationName sql.NullString
+	ID             int64
+	TgID           sql.NullInt64
+	FullName       sql.NullString
+	Email          sql.NullString
+	Phone          sql.NullString
+	Role           RoleType
+	OnWork         bool
+	Verified       bool
+	Rating         sql.NullString
+	Balance        sql.NullString
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+	PasswordHash   sql.NullString
+	OrganizationID sql.NullInt64
 }
 
 func (s *service) GetByID(ctx context.Context, userID int64) (*GetByIDResult, error) {
@@ -63,15 +58,6 @@ func (s *service) GetByID(ctx context.Context, userID int64) (*GetByIDResult, er
 		UpdatedAt:      user.UpdatedAt,
 		PasswordHash:   user.PasswordHash,
 		OrganizationID: user.OrganizationID,
-	}
-
-	if user.OrganizationID.Valid {
-		org, err := s.organizationsRepository.GetByID(ctx, user.OrganizationID.Int64)
-		if err != nil {
-			return nil, err
-		}
-
-		res.OrganizationName = sql.NullString{String: org.Name, Valid: org.Name != ""}
 	}
 
 	return res, nil

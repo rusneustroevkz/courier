@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"github.com/rusneustroevkz/courier/internal/client/organizations"
 	"log/slog"
 	"strconv"
 	"time"
@@ -14,9 +13,9 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 	redislib "github.com/redis/go-redis/v9"
-	backendTelegram "github.com/rusneustroevkz/courier/internal/backend/telegram"
 	"github.com/rusneustroevkz/courier/internal/client/organizations_branches"
 	"github.com/rusneustroevkz/courier/internal/client/telegram"
+	backendTelegram "github.com/rusneustroevkz/courier/internal/client/telegram"
 	"github.com/rusneustroevkz/courier/internal/client/users"
 	"github.com/rusneustroevkz/courier/pkg/redis"
 	"gopkg.in/telebot.v4"
@@ -31,13 +30,12 @@ type Service interface {
 }
 
 type service struct {
-	db                      *sqlx.DB
-	ordersRepository        Querier
-	branchesRepo            organizations_branches.Querier
-	redisClient             *redis.Redis
-	telegramBot             *telegram.Telegram
-	usersRepo               users.Querier
-	organizationsRepository organizations.Querier
+	db               *sqlx.DB
+	ordersRepository Querier
+	branchesRepo     organizations_branches.Querier
+	redisClient      *redis.Redis
+	telegramBot      *telegram.Telegram
+	usersRepo        users.Querier
 }
 
 func NewService(
@@ -47,16 +45,14 @@ func NewService(
 	redisClient *redis.Redis,
 	telegramBot *telegram.Telegram,
 	usersRepo users.Querier,
-	organizationsRepository organizations.Querier,
 ) Service {
 	return &service{
-		db:                      db,
-		ordersRepository:        ordersRepository,
-		branchesRepo:            branchesRepo,
-		redisClient:             redisClient,
-		telegramBot:             telegramBot,
-		usersRepo:               usersRepo,
-		organizationsRepository: organizationsRepository,
+		db:               db,
+		ordersRepository: ordersRepository,
+		branchesRepo:     branchesRepo,
+		redisClient:      redisClient,
+		telegramBot:      telegramBot,
+		usersRepo:        usersRepo,
 	}
 }
 
@@ -89,19 +85,6 @@ func (s *service) Create(ctx context.Context, args Create) (int64, error) {
 		return 0, errors.New("bad coords")
 	}
 
-	organization, err := s.organizationsRepository.GetByID(ctx, args.OrganizationID)
-	if err != nil {
-		return 0, err
-	}
-
-	balance, err := strconv.ParseFloat(organization.Balance, 64)
-	if err != nil {
-		return 0, errors.New("invalid balance")
-	}
-	if balance < 100 {
-		return 0, errors.New("balance is less 100")
-	}
-
 	params := CreateOrderParams{
 		OrganizationID: args.OrganizationID,
 		FromAddress:    branch.Address,
@@ -113,6 +96,10 @@ func (s *service) Create(ctx context.Context, args Create) (int64, error) {
 		Description: sql.NullString{
 			String: args.Description,
 			Valid:  args.Description != "",
+		},
+		Price: sql.NullString{
+			String: strconv.FormatFloat(100.00, 'g', -1, 64),
+			Valid:  true,
 		},
 	}
 

@@ -2,8 +2,6 @@ package main
 
 import (
 	"context"
-	"github.com/rusneustroevkz/courier/internal/client/branch_geozones"
-	"github.com/rusneustroevkz/courier/internal/client/telegram"
 	"log/slog"
 	"net/http"
 	"os"
@@ -13,12 +11,14 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/rusneustroevkz/courier/internal/client/auth"
+	"github.com/rusneustroevkz/courier/internal/client/branch_geozones"
 	"github.com/rusneustroevkz/courier/internal/client/config"
 	"github.com/rusneustroevkz/courier/internal/client/dadata"
 	"github.com/rusneustroevkz/courier/internal/client/orders"
 	"github.com/rusneustroevkz/courier/internal/client/organizations"
 	"github.com/rusneustroevkz/courier/internal/client/organizations_branches"
 	"github.com/rusneustroevkz/courier/internal/client/router"
+	"github.com/rusneustroevkz/courier/internal/client/telegram"
 	"github.com/rusneustroevkz/courier/internal/client/users"
 	"github.com/rusneustroevkz/courier/pkg/middlewares"
 	"github.com/rusneustroevkz/courier/pkg/postgres"
@@ -85,27 +85,25 @@ func main() {
 	}
 
 	organizationsRepository := organizations.New(db.DB)
-	organizationsService := organizations.NewService(organizationsRepository)
-	organizationsController := organizations.NewController(organizationsService)
-
 	branchGeozoneRepository := branch_geozones.New(db.DB)
+	usersRepository := users.New(db.DB)
 
 	dadataClient := dadata.NewDadata(branchGeozoneRepository)
 
-	usersRepository := users.New(db.DB)
-	usersService := users.NewService(usersRepository, organizationsRepository)
-	usersController := users.NewController(usersService)
-
+	organizationsService := organizations.NewService(organizationsRepository)
+	usersService := users.NewService(usersRepository)
 	organizationsBranchesRepository := organizations_branches.New(db.DB)
-	organizationsBranchesService := organizations_branches.NewService(dadataClient, organizationsBranchesRepository, db.DB)
-	organizationsBranchesController := organizations_branches.NewController(organizationsBranchesService, usersService)
-
 	ordersRepository := orders.New(db.DB)
-	ordersService := orders.NewService(db.DB, ordersRepository, organizationsBranchesRepository, redisClient, telegramBot, usersRepository, organizationsRepository)
-	ordersController := orders.NewController(usersService, ordersService)
-
 	authRepository := auth.New(db.DB)
+
+	organizationsBranchesService := organizations_branches.NewService(dadataClient, organizationsBranchesRepository, db.DB)
+	ordersService := orders.NewService(db.DB, ordersRepository, organizationsBranchesRepository, redisClient, telegramBot, usersRepository)
 	authService := auth.NewService(cfg, usersRepository, authRepository)
+
+	usersController := users.NewController(usersService)
+	organizationsBranchesController := organizations_branches.NewController(organizationsBranchesService, usersService)
+	ordersController := orders.NewController(usersService, ordersService)
+	organizationsController := organizations.NewController(organizationsService, ordersService, usersService)
 	authController := auth.NewController(authService, cfg)
 
 	mw := middlewares.NewMiddleware(cfg.Middleware, authService)

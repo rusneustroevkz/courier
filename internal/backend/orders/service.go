@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"github.com/jmoiron/sqlx"
+	"github.com/pkg/errors"
 	"github.com/rusneustroevkz/courier/internal/backend/organizations"
 	"strconv"
 	"time"
@@ -308,7 +309,15 @@ func (s *service) PickUpOrder(ctx context.Context, orderID int64) error {
 	if err != nil {
 		return err
 	}
-	newBalance := balance - 100.00
+	if !order.Price.Valid {
+		return errors.New("order price not valid")
+	}
+	orderPrice, err := strconv.ParseFloat(order.Price.String, 64)
+	if err != nil {
+		return err
+	}
+
+	newBalance := balance - orderPrice
 
 	payOrderParams := organizations.PayOrderParams{
 		Balance: strconv.FormatFloat(newBalance, 'f', -1, 64),

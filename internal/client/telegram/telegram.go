@@ -8,6 +8,10 @@ import (
 	"gopkg.in/telebot.v4"
 )
 
+const (
+	CallbackAcceptOrder = "accept_order"
+)
+
 type Config struct {
 	Token   string `yaml:"token"`
 	Timeout int64  `yaml:"timeout"`

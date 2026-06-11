@@ -3,7 +3,7 @@
 CREATE EXTENSION IF NOT EXISTS postgis;
 
 -- 2. Создаем таблицу геозон
-CREATE TABLE branch_geozones (
+CREATE TABLE if not exists branch_geozones (
     id SERIAL PRIMARY KEY,
     organization_branch_id INT NOT NULL,
     name VARCHAR(255) NOT NULL,
@@ -22,5 +22,5 @@ CREATE INDEX idx_branch_geozones_branch_id ON branch_geozones (organization_bran
 -- +goose Down
 -- +goose StatementBegin
 drop EXTENSION postgis;
- drop table branch_geozones;
+drop table branch_geozones;
 -- +goose StatementEnd
