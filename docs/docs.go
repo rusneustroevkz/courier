@@ -1459,8 +1459,11 @@ const docTemplate = `{
                 "created_at": {
                     "type": "string"
                 },
-                "order_id": {
+                "id": {
                     "type": "integer"
+                },
+                "price": {
+                    "type": "number"
                 }
             }
         },

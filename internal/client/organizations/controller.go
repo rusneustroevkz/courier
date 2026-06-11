@@ -112,10 +112,11 @@ type TransactionsPagination struct {
 	TotalPages int64 `json:"total_pages,omitempty"`
 }
 type TransactionsData struct {
-	OrderID     int64     `json:"order_id"`
+	ID          int64     `json:"id"`
 	AddressFrom string    `json:"address_from"`
 	AddressTo   string    `json:"address_to"`
 	CreatedAt   time.Time `json:"created_at"`
+	Price       float64   `json:"price"`
 }
 
 // Transactions Список транзакций баланса
@@ -192,10 +193,18 @@ func (c *controller) Transactions(w http.ResponseWriter, r *http.Request) {
 	}
 	for _, order := range result.Data {
 		item := TransactionsData{
-			OrderID:     order.ID,
+			ID:          order.ID,
 			AddressFrom: order.FromAddress,
 			AddressTo:   order.ToAddress,
 			CreatedAt:   order.CreatedAt,
+		}
+		if order.Price.Valid {
+			price, err := strconv.ParseFloat(order.Price.String, 64)
+			if err != nil {
+				log.ErrorContext(r.Context(), "failed parse price", "error", err)
+			} else {
+				item.Price = price
+			}
 		}
 
 		res.Data = append(res.Data, item)
