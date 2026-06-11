@@ -76,6 +76,11 @@ func (t *Telegram) CommandStart(ct telebot.Context) error {
 				var courierLocation redis.UserLocation
 
 				if err := json.Unmarshal([]byte(val), &courierLocation); err == nil {
+					courierLocation = redis.UserLocation{
+						Latitude:  62.030696,
+						Longitude: 129.741524,
+					}
+
 					var pointA, pointB GeoPoint
 					var errLat, errLon error
 					if order.Status == orders.OrderStatusAccepted {
@@ -95,6 +100,7 @@ func (t *Telegram) CommandStart(ct telebot.Context) error {
 					} else {
 						dist := DistanceEarth(pointA, pointB)
 						params["dist"] = dist
+						opts = append(opts, WithDistance(dist), WithOrderStatus(order.Status))
 					}
 				}
 			}

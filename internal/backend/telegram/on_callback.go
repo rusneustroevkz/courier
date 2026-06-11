@@ -18,6 +18,7 @@ const (
 	CallbackShareLocation = "on_location"
 	CallbackAcceptOrder   = "accept_order"
 	CallbackDoneOrder     = "done_order"
+	CallbackPickUpOrder   = "pick_up_order"
 	CallbackOrdersList    = "orders_list"
 )
 
@@ -185,6 +186,35 @@ func (t *Telegram) CallbackDoneOrder(parts []string, ctx context.Context, ct tel
 	if err != nil {
 		log.ErrorContext(ctx, "failed done order", "order_id", orderID, "err", err)
 		return t.SendWithProfile(ct, "Ошибка завершении заказа", t.Menu(ct))
+	}
+
+	return t.CommandStart(ct)
+}
+
+func (t *Telegram) CallbackPickUpOrder(parts []string, ctx context.Context, ct telebot.Context) error {
+	log := slog.With("method", "CallbackPickUpOrder")
+
+	if len(parts) < 2 {
+		log.ErrorContext(ctx, "invalid parts length", "parts_len", len(parts))
+		return t.SendWithProfile(ct, "Ошибка обработки запроса", t.Menu(ct))
+	}
+
+	payload := strings.Split(parts[1], "|")
+	if len(payload) < 1 {
+		log.Error("invalid callback parts")
+		return t.SendWithProfile(ct, "Ошбика коллбэк", t.Menu(ct))
+	}
+
+	orderID, err := strconv.ParseInt(payload[1], 10, 64)
+	if err != nil {
+		log.ErrorContext(ctx, "failed to parse order id", "order_id", parts[2], "err", err)
+		return t.SendWithProfile(ct, "Ошибка обработки айди заказа", t.Menu(ct))
+	}
+
+	err = t.ordersService.PickUpOrder(ctx, orderID)
+	if err != nil {
+		log.ErrorContext(ctx, "failed done order", "order_id", orderID, "err", err)
+		return t.SendWithProfile(ct, "Ошибка при забора заказа", t.Menu(ct))
 	}
 
 	return t.CommandStart(ct)

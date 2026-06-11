@@ -21,5 +21,10 @@ limit 1;
 
 -- name: DoneOrder :exec
 update orders
-set status = 'delivered'
+set status = 'delivered', delivered_at = now()
+where id = $1;
+
+-- name: PickUpOrder :exec
+update orders
+set status = 'picked_up', picked_up_at = now()
 where id = $1;

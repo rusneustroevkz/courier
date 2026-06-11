@@ -2,6 +2,7 @@ package telegram
 
 import (
 	"context"
+	"github.com/rusneustroevkz/courier/internal/backend/orders"
 	"gopkg.in/telebot.v4"
 	"log/slog"
 	"strconv"
@@ -9,6 +10,8 @@ import (
 
 type MenuConfig struct {
 	activeOrderID int64
+	orderStatus   orders.OrderStatus
+	dist          float64
 }
 
 type MenuOption func(*MenuConfig)
@@ -19,13 +22,23 @@ func WithActiveOrder(orderID int64) MenuOption {
 	}
 }
 
+func WithDistance(dist float64) MenuOption {
+	return func(c *MenuConfig) {
+		c.dist = dist
+	}
+}
+
+func WithOrderStatus(status orders.OrderStatus) MenuOption {
+	return func(c *MenuConfig) {
+		c.orderStatus = status
+	}
+}
+
 func (t *Telegram) Menu(ct telebot.Context, opts ...MenuOption) *telebot.ReplyMarkup {
 	ctx := context.Background()
 	sender := ct.Sender()
 
-	config := &MenuConfig{
-		activeOrderID: 0,
-	}
+	config := &MenuConfig{}
 
 	for _, opt := range opts {
 		opt(config)
@@ -63,9 +76,14 @@ func (t *Telegram) Menu(ct telebot.Context, opts ...MenuOption) *telebot.ReplyMa
 			})
 		}
 	}
-	if config.activeOrderID > 0 {
+	if config.activeOrderID > 0 && config.orderStatus == orders.OrderStatusPickedUp && config.dist < 100 {
 		rows = append(rows, telebot.Row{
 			telebot.Btn{Text: "Завершить заказ", Unique: CallbackDoneOrder, Data: strconv.FormatInt(config.activeOrderID, 10)},
+		})
+	}
+	if config.activeOrderID > 0 && config.orderStatus == orders.OrderStatusAccepted && config.dist < 100 {
+		rows = append(rows, telebot.Row{
+			telebot.Btn{Text: "Забрать заказ", Unique: CallbackPickUpOrder, Data: strconv.FormatInt(config.activeOrderID, 10)},
 		})
 	}
 

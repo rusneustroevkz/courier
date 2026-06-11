@@ -35,7 +35,7 @@ func (q *Queries) AcceptOrder(ctx context.Context, arg AcceptOrderParams) error 
 
 const doneOrder = `-- name: DoneOrder :exec
 update orders
-set status = 'delivered'
+set status = 'delivered', delivered_at = now()
 where id = $1
 `
 
@@ -164,4 +164,15 @@ func (q *Queries) GetPendingOrders(ctx context.Context) ([]*Order, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const pickUpOrder = `-- name: PickUpOrder :exec
+update orders
+set status = 'picked_up', picked_up_at = now()
+where id = $1
+`
+
+func (q *Queries) PickUpOrder(ctx context.Context, id int64) error {
+	_, err := q.db.ExecContext(ctx, pickUpOrder, id)
+	return err
 }

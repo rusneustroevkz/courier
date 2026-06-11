@@ -63,9 +63,13 @@ func (t *Telegram) OnEditedLocation(ct telebot.Context) error {
 		return t.SendWithProfile(ct, "Трансляция геопозиции остановлена. Смена завершена.", t.Menu(ct))
 	}
 
+	//userLocation := redis.UserLocation{
+	//	Latitude:  msg.Location.Lat,
+	//	Longitude: msg.Location.Lng,
+	//}
 	userLocation := redis.UserLocation{
-		Latitude:  msg.Location.Lat,
-		Longitude: msg.Location.Lng,
+		Latitude:  62.045041,
+		Longitude: 129.725119,
 	}
 
 	order, err := t.ordersService.GetActiveOrder(ctx, ct.Sender().ID)

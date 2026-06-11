@@ -15,6 +15,7 @@ type Querier interface {
 	GetByID(ctx context.Context, id int64) (*Order, error)
 	GetCourierActiveOrder(ctx context.Context, courierID sql.NullInt64) (*Order, error)
 	GetPendingOrders(ctx context.Context) ([]*Order, error)
+	PickUpOrder(ctx context.Context, id int64) error
 }
 
 var _ Querier = (*Queries)(nil)

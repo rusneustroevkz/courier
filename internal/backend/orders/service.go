@@ -15,6 +15,7 @@ type Service interface {
 	AcceptOrder(ctx context.Context, args AcceptOrder) error
 	GetActiveOrder(ctx context.Context, userID int64) (*GetByIDResult, error)
 	DoneOrder(ctx context.Context, orderID int64) error
+	PickUpOrder(ctx context.Context, orderID int64) error
 }
 
 type service struct {
@@ -250,6 +251,51 @@ func (s *service) DoneOrder(ctx context.Context, orderID int64) error {
 	}
 
 	if err := s.ordersRepository.WithTx(tx).DoneOrder(ctx, orderID); err != nil {
+		return err
+	}
+
+	organization, err := s.organizationsRepository.GetByID(ctx, order.OrganizationID)
+	if err != nil {
+		return err
+	}
+
+	balance, err := strconv.ParseFloat(organization.Balance, 64)
+	if err != nil {
+		return err
+	}
+	newBalance := balance - 100.00
+
+	payOrderParams := organizations.PayOrderParams{
+		Balance: strconv.FormatFloat(newBalance, 'f', -1, 64),
+		ID:      organization.ID,
+	}
+	if err := s.organizationsRepository.WithTx(tx).PayOrder(ctx, payOrderParams); err != nil {
+		return err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *service) PickUpOrder(ctx context.Context, orderID int64) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		_ = tx.Rollback()
+	}()
+
+	order, err := s.ordersRepository.GetByID(ctx, orderID)
+	if err != nil {
+		return err
+	}
+
+	if err := s.ordersRepository.WithTx(tx).PickUpOrder(ctx, orderID); err != nil {
 		return err
 	}
 

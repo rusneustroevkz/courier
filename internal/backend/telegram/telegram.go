@@ -140,6 +140,9 @@ func (t *Telegram) OnCallback(ct telebot.Context) error {
 	if len(parts) > 1 && strings.HasPrefix(parts[1], CallbackOrdersList) {
 		return t.CallbackOrdersList(parts, ctx, ct)
 	}
+	if len(parts) > 1 && strings.HasPrefix(parts[1], CallbackPickUpOrder) {
+		return t.CallbackPickUpOrder(parts, ctx, ct)
+	}
 
 	return nil
 }
