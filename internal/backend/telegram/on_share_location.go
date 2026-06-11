@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"log/slog"
-	"math"
 	"strconv"
 	"time"
 
@@ -63,13 +62,9 @@ func (t *Telegram) OnEditedLocation(ct telebot.Context) error {
 		return t.SendWithProfile(ct, "Трансляция геопозиции остановлена. Смена завершена.", t.Menu(ct))
 	}
 
-	//userLocation := redis.UserLocation{
-	//	Latitude:  msg.Location.Lat,
-	//	Longitude: msg.Location.Lng,
-	//}
 	userLocation := redis.UserLocation{
-		Latitude:  62.045041,
-		Longitude: 129.725119,
+		Latitude:  msg.Location.Lat,
+		Longitude: msg.Location.Lng,
 	}
 
 	order, err := t.ordersService.GetActiveOrder(ctx, ct.Sender().ID)
@@ -92,29 +87,4 @@ func (t *Telegram) OnEditedLocation(ct telebot.Context) error {
 	}
 
 	return ct.Respond()
-}
-
-type GeoPoint struct {
-	Lat, Lon float64 // Широта и долгота в градусах
-}
-
-func DistanceEarth(p1, p2 GeoPoint) float64 {
-	const earthRadiusKm = 6371.0
-
-	// Переводим градусы в радианы
-	lat1 := p1.Lat * math.Pi / 180
-	lon1 := p1.Lon * math.Pi / 180
-	lat2 := p2.Lat * math.Pi / 180
-	lon2 := p2.Lon * math.Pi / 180
-
-	// Разница координат
-	dLat := lat2 - lat1
-	dLon := lon2 - lon1
-
-	// Формула гаверсинусов
-	a := math.Pow(math.Sin(dLat/2), 2) +
-		math.Cos(lat1)*math.Cos(lat2)*math.Pow(math.Sin(dLon/2), 2)
-	c := 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
-
-	return earthRadiusKm * c * 1000
 }

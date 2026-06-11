@@ -9,6 +9,7 @@ import (
 	"github.com/rusneustroevkz/courier/internal/backend/orders"
 	"github.com/rusneustroevkz/courier/internal/backend/users"
 	"github.com/rusneustroevkz/courier/pkg/redis"
+	"github.com/rusneustroevkz/courier/pkg/utils"
 	"gopkg.in/telebot.v4"
 	"log/slog"
 	"strconv"
@@ -76,12 +77,7 @@ func (t *Telegram) CommandStart(ct telebot.Context) error {
 				var courierLocation redis.UserLocation
 
 				if err := json.Unmarshal([]byte(val), &courierLocation); err == nil {
-					courierLocation = redis.UserLocation{
-						Latitude:  62.030696,
-						Longitude: 129.741524,
-					}
-
-					var pointA, pointB GeoPoint
+					var pointA, pointB utils.GeoPoint
 					var errLat, errLon error
 					if order.Status == orders.OrderStatusAccepted {
 						pointA.Lat, errLat = strconv.ParseFloat(order.FromLat, 64)
@@ -98,7 +94,7 @@ func (t *Telegram) CommandStart(ct telebot.Context) error {
 					if errLat != nil || errLon != nil {
 						log.ErrorContext(ctx, "failed to get active order", "error", errLat, errLon)
 					} else {
-						dist := DistanceEarth(pointA, pointB)
+						dist := utils.DistanceEarth(pointA, pointB)
 						params["dist"] = dist
 						opts = append(opts, WithDistance(dist), WithOrderStatus(order.Status))
 					}
